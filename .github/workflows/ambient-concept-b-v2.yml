@@ -1,0 +1,64 @@
+name: Ambient Concept B v2 Side-by-Side Test APK
+
+on:
+  push:
+    branches:
+      - feature/custom-home-ambient
+    paths:
+      - .github/workflows/ambient-concept-b-v2.yml
+      - launcher/app/src/main/java/com/gathin/tvhome/Ambient**
+      - launcher/app/src/test/java/com/gathin/tvhome/Ambient**
+      - launcher/app/build.gradle
+      - launcher/app/src/ambientPreview/AndroidManifest.xml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-v2:
+    name: Build non-HOME side-by-side v2 preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run tests and build v2 package
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PambientPreview=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview.v2
+      - name: Verify installed package and disabled HOME
+        run: |
+          set -e
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt"
+          "$AAPT" dump badging "$APK" | grep "package: name='com.k3nnut.tvhome.ambient.preview.v2'"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$RUNNER_TEMP/v2-manifest.txt"
+          python3 - "$RUNNER_TEMP/v2-manifest.txt" <<'PY'
+          import re, sys
+          content = open(sys.argv[1], encoding="utf8").read()
+          def component(name):
+              parts = content.split("com.gathin.tvhome." + name, 1)
+              if len(parts) < 2:
+                  raise SystemExit("Missing " + name)
+              return parts[1][:1200]
+          if not re.search(r"android:enabled.*(?:0x0|false)", component("MainActivity")):
+              raise SystemExit("Refusing preview APK: HOME MainActivity is enabled!")
+          if not re.search(r"android:enabled.*(?:0xffffffff|0x1|true)", component("AmbientPhotoActivity")):
+              raise SystemExit("Ambient preview is not enabled")
+          print("PASS: independent v2 package with no enabled HOME activity")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ambient-concept-b-v2-side-by-side-apk
+          path: launcher/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 21
