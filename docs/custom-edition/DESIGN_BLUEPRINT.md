@@ -3,14 +3,15 @@
 **This is a design proposal, not the currently implemented launcher.** All shown content in mockups is illustrative; photo art is a deliberately synthetic **placeholder**, never an image to ship on the TV. Clock/weather/prayer figures are mock labels, **not actual date-specific weather or official prayer times**.
 
 - [Home mockup — 1920×1080 SVG](mockups/home-mode.svg)
-- [Ambient mockup — 1920×1080 SVG](mockups/ambient-mode.svg)
+- [Ambient concept A: consolidated bottom information — 1920×1080](mockups/ambient-mode.svg)
+- [Ambient concept B: split-corner clock/weather + slim prayer footer — 1920×1080](mockups/ambient-mode-split.svg) (**recommended for the next review**)
 - [Product specification](PRODUCT_SPEC.md)
 
 ## Overall visual intent
 
 **Home:** faithful to upstream CleanYourTV: near-black, understated, one floating dock, one moving focus highlight, selected app name over a soft ambient glow, tiny system utilities. **No family photo here**: intentional separation from ambient view.
 
-**Ambient:** full-bleed **local photos chosen by the owner**; time, weather and complete Brunei-Muara prayer line in a darkened **lower-zone legibility gradient**, with **the image still the dominant content**. No app dock, tiles, player, ads, captions or logo. On a bright photo, only the underlying text area gets enough shade for contrast.
+**Ambient:** full-bleed **local photos chosen by the owner**; time/date, weather and complete Brunei-Muara prayer line carefully separated into visual zones so **the center of the photo remains unobstructed**. Concept A concentrates information along the bottom; concept B places clock/date top-left, weather top-right and a slim prayer footer. Both use subtle local text gradients; **the image remains dominant**. No app dock, tiles, player, ads, captions or logo. On a bright photo, only the underlying text area gets enough shade for contrast.
 
 ## Home: reference screen 1920×1080
 
@@ -27,13 +28,16 @@
 
 ## Ambient: reference screen 1920×1080
 
+Two composition options are saved rather than silently replacing the previous concept. **Concept B (split corners) is our proposed next-stage direction**, pending owner reaction. It keeps a wide unobstructed middle region for people's faces, unlike a large permanent glass dashboard.
+
 | Region | Suggested bounds | Behavior |
 |---|---|---|
 | Photo | entire 1920×1080 | One user-supplied image, aspect-preserving center crop |
-| Gradient mask | y≈650–1080, local around info | Low-opacity dark tint only where text must be legible |
-| Time/date | x≈110, y≈750–955 | Time in large thin type, small date below |
-| Weather | x≈1435–1810, y≈775–910 | Small condition icon, temperature, location |
-| Prayer line | x≈110–1810, y≈963–1055 | All five daily prayers, even spacing, restrained next-prayer underline |
+| Gradient mask | top y≈0–380 and bottom y≈705–1080 | Only behind readable information; never dim the whole picture |
+| Time/date | x≈105–700, y≈115–350 | Clock at top-left; compact date and location, no large surrounding card |
+| Weather | x≈1450–1810, y≈145–300 | Weather at top-right: temperature, condition, area; no GPS needed |
+| Prayer line | x≈110–1810, y≈865–1050 | Five daily prayer times in a single low footer; next-prayer treatment only one restrained small translucent highlight |
+| Clear photo center | x≈100–1820, y≈365–705 | No titles, dock, marketing, recommendations or large translucent panel |
 
 **Prayer line:** show all five using verified Brunei-Muara PDI values available for that date. Highlight the next prayer and label it `NEXT`. No sample times may be shipped. If timetable absent/outside valid range, show `Prayer timetable unavailable` rather than historical values. Allow later a compact `next only` user preference, but the full five-time line is our *design review default*.
 
@@ -54,6 +58,6 @@ Current upstream `ClockDream.java` renders only `ClockScene` into `dream_clock.x
 ## Review prompts
 
 1. Does the **original CleanYourTV wide-banner dock** and completely dark Home look right now? Its logos in the SVG are only placeholders; production will use installed app TV banners.
-2. Do you prefer Ambient data at the **bottom** as drawn, or time at top-left/weather top-right/prayers bottom?
+2. Please compare [Concept A](mockups/ambient-mode.svg) (everything along bottom) vs [Concept B](mockups/ambient-mode-split.svg) (time left/top, weather right/top, prayers footer). Concept B is recommended to preserve more of your photo.
 3. Should the Ambient timetable show five prayer times by default, or next prayer only? The drawing selects five.
-4. Approve these two compositions **before any launcher code changes or TV debloating**.
+4. Confirm one Ambient composition **before any launcher code changes or TV debloating**. Photos/data shown are mock placeholders, not content imported from your TV.
