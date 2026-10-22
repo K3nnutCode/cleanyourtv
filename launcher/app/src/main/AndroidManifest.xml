@@ -75,6 +75,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:enabled="${mainActivityEnabled}"
             android:exported="true"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
@@ -91,6 +92,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Explicit opt-in photo prototype: enabled only in a separately named preview build.
+             This component is an app launcher, NEVER an Android HOME candidate. -->
+        <activity
+            android:name=".AmbientPhotoActivity"
+            android:enabled="${ambientPreviewEnabled}"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Material.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>
 
