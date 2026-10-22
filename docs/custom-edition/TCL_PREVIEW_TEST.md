@@ -23,7 +23,7 @@ Last updated: 22 Oct 2026. This is NOT the final system screensaver, not a repla
    adb shell am start -W -n com.k3nnut.tvhome.ambient.preview/com.gathin.tvhome.AmbientPhotoActivity
    ```
    If debugging is unavailable, **stop** rather than using launcher takeover or disabling OEM packages. If installation fails due to a different test signature, do **not** uninstall the default Google Home or CleanYourTV; an uninstall of **only the Ambient preview** would remove its imported photos and must be an informed choice.
-4. Use `Choose local photos` to import a few pictures from a USB drive or file picker (JPG/PNG/WebP, <=10MiB each). If there is no compatible Documents UI, report the picker message and stop; the ADB-import alternative has not been validated yet.
+4. Use `Choose local photos` to import a few pictures from a USB drive or file picker (JPG/PNG/WebP, <=10MiB each). If there is no compatible Documents UI, report the picker message and stop; a debug-only app-private `run-as` copy may be tested separately, but never via restricted `/sdcard/Android/data`.
 5. Confirm photo fill/crop, one-second fade after ~60 seconds, clock/date at top-left, actual city weather at top-right, five prayer times at bottom. If the day is not in the verified October–December 2026 coverage, the prayer row should visibly say `Prayer times unavailable` and display **no invented times**.
 6. Check `Back` to exit and the real physical `Home` key to return to the original Google TV launcher. Then run:
    ```bash
