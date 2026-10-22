@@ -1,6 +1,6 @@
 # Custom Edition — Product Specification (Design v0.1)
 
-**Status:** PROPOSED / FOR OWNER REVIEW — no code or APK approved.
+**Status:** VISUAL DIRECTION APPROVED by owner on 22 October 2026. Home uses the original CleanYourTV landscape dock; Ambient uses **Concept B**. Feature implementation and actual TV installation remain separately gated.
 **Base:** [Gathin23/CleanYourTV](https://github.com/Gathin23/cleanyourtv), fork [K3nnutCode/cleanyourtv](https://github.com/K3nnutCode/cleanyourtv).
 **Target:** TCL 4K-55V6B, Android/Google TV 11 (owner performs on-device checks).
 **Design branch:** `feature/custom-home-ambient`.
@@ -78,9 +78,9 @@ Upstream `ClockScene` and `dream_clock.xml` show **only clock/date with glow on 
 
 ## Design review gates (before coding)
 
-- Owner approves the Home mockup and chooses between [Ambient concept A](mockups/ambient-mode.svg) and [Ambient concept B](mockups/ambient-mode-split.svg) (B recommended). Mockups in `mockups/` are illustrative, with synthetic scenery and demo labels, not actual TV captures.
+- **Approved:** Home preserves the original CleanYourTV banner dock and Ambient adopts [Concept B](mockups/ambient-mode-split.svg) (top-left clock/date, top-right weather, five-time prayer footer). [Concept A](mockups/ambient-mode.svg) is retained for historical comparison. Mockups are illustrative, with synthetic scenery and sample values, not actual TV captures.
 - Agree how many app tiles, whether app names always show, top controls and ambient widget positioning.
-- Agree photos stay *only* in Ambient Mode, not Home; status at v0.1: **proposed**, owner approval pending.
+- **Approved:** Local user photos appear only in Ambient Mode, not behind the dark Home dock.
 - Agree local-only photo import, 60-second rotation, correct date-source behavior and weather failure state.
 
 ## Phase plan
