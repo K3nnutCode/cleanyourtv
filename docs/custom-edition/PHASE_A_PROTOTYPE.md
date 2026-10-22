@@ -1,17 +1,23 @@
-# Ambient Photo Prototype — Phase A
+# Ambient Photo Prototype — Phases A + B (manual preview)
 
 **Status:** Source-only proof of concept. The owner approved **Concept B's visual composition**, not production deployment. No screenshots from the TCL or system-screensaver activation have been verified.
 
 ## What exists now
 - Original upstream CleanYourTV **Home dock and UI code are unchanged**.
 - Gradle opt-in `-PambientPreview=true` produces a separate `com.k3nnut.tvhome.ambient.preview` package **if** `-PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview` is supplied. In that build, upstream `MainActivity` (HOME claimant) is **disabled**, and `AmbientPhotoActivity` is the only enabled launchable preview UI. It is deliberately **not** an Android `DreamService`.
-- Choose local images via a compatible system Documents picker. Supported: JPEG/PNG/WebP ≤10 MiB per image; first 100 in collection. Selected URIs are copied to app-specific `ambient_photos` directory. No Internet permission has been added.
+- Choose local images via a compatible system Documents picker. Supported: JPEG/PNG/WebP ≤10 MiB per image; first 100 in collection. Selected URIs are copied to app-specific `ambient_photos` directory. The **Ambient-only build** declares INTERNET exclusively to query Open-Meteo; the original CleanYourTV launcher build remains network-free.
 - If the TV has no Documents picker, the app-specific external folder can be populated manually by the owner with authorized ADB file push. This requires development-only ADB setup and has **not** been tested on TCL. It is not automatic and should not be done until the owner approves a trial.
 - A 60-second slideshow uses aspect-preserving center-crop, sampled off-thread decoding, at most two displayed bitmaps, and explicit ~1000ms frame-timed smoothstep crossfade. No online content, stock wallpaper, movie posters or fake data can enter the collection.
 - If empty, it displays a dark setup screen rather than bundled scenic wallpaper. In manual preview, Back exits and OK while a photo is visible opens the photo picker. This is a **temporary preview affordance**, not part of Concept B's finished screensaver.
 
+## Concept B information overlay (implemented in preview source, pending TV validation)
+- **Time/date:** live Android TextClock in Asia/Brunei, placed at the upper-left.
+- **Weather:** upper-right, city-level Bandar Seri Begawan fixed coordinates; HTTPS Open-Meteo, cached and age-labelled when offline, refresh every 30 minutes, retry in 5 minutes on errors. Weather requires no device GPS data.
+- **Prayers:** lower footer showing all five Brunei-Muara PDI 2026 date-specific prayer times with the next prayer highlighted. Coverage is **ONLY 2026-10-01 through 2026-12-31**; other dates show an unavailable warning rather than inferred numbers. Tomorrow is used for post-Isyak only if its table date is also verified.
+- **Layout:** small top/bottom gradients only, clear middle photo; no added glass panels or playback content.
+
 ## What does NOT exist yet
-- Full Concept B information overlays: time/date, Open-Meteo weather, **verified up-to-date** PDI Brunei-Muara five-prayer timetable.
+- New verified PDI prayer data outside October–December 2026, or actual TCL weather/permission validation.
 - Actual system screen-saver selection, DreamService plumbing, clock-only fallback integration, idle trigger, Android TV remote compatibility tests, final photo setup/settings interface.
 - No on-device launch, screenshot, permission or performance validation.
 
@@ -35,4 +41,4 @@ No `adb` commands are to be run automatically. Keep the original TCL Google TV H
 1. Examine the CI build result and safety gate.
 2. Verify that a manual preview can import and cycle photos in an Android TV emulator without installing or selecting HOME.
 3. Once explicitly authorized, test on the real TCL using an independent preview package, capturing real photos **privately**, never committing them to the public repo.
-4. Then build the full Concept B overlays and the real opt-in screensaver service.
+4. Confirm the actual Concept B overlay on the TV and source freshness. Then, separately, implement the **opt-in Android DreamService** after lifecycle and TV power checks.
