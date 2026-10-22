@@ -4,7 +4,7 @@
 **Base:** [Gathin23/CleanYourTV](https://github.com/Gathin23/cleanyourtv), fork [K3nnutCode/cleanyourtv](https://github.com/K3nnutCode/cleanyourtv).
 **Target:** TCL 4K-55V6B, Android/Google TV 11 (owner performs on-device checks).
 **Design branch:** `feature/custom-home-ambient`.
-**Related:** [DESIGN_BLUEPRINT.md](DESIGN_BLUEPRINT.md), mockups in `mockups/`.
+**Related:** [DESIGN_BLUEPRINT.md](DESIGN_BLUEPRINT.md), [AMBIENT_IMPLEMENTATION_PLAN.md](AMBIENT_IMPLEMENTATION_PLAN.md), mockups in `mockups/`.
 
 ## Vision
 
@@ -41,7 +41,7 @@ Make exactly two clear visual modes:
 - Smooth ~0.8–1.1s fade when practical, predecode off UI thread; avoid video wallpapers, high-frequency shaders and performance-heavy blur.
 - Limit to reasonable photo size, supported formats and memory budget; honor local permissions. Existing upstream `WallpaperRotation` supports JPG/JPEG/PNG/WebP, <=10MB, up to 100 images per folder; this is an **implementation reference**, not yet the finalized ambient library contract.
 - Photos remain on the TV: no analytics, uploads or cloud sync. Don't commit user's photos, screenshot captures, ADB addresses, network names or secrets to this public GitHub fork.
-- Overlays stay legible against bright/dark images with **small, localized gradient only behind text**. The image itself is never darkened as a whole if we can avoid it.
+- Overlays stay legible against bright/dark images with **small, localized gradient only behind text**. Recommended concept B positions **clock/date top-left, weather top-right, and all five prayers in one low footer**, leaving the middle open for the photograph. Preserve [the previous bottom-grouped concept](mockups/ambient-mode.svg) as a design alternative until owner review. The image itself is never darkened as a whole if we can avoid it.
 - Avoid static-image retention over long periods: clock/prayer panel may shift a few pixels periodically; use Android power-saving conventions and respect TCL's system screen-off time.
 - No blocking overlays, interruptions or adverts; remote key should wake/dismiss reliably. Don't swallow the key and accidentally click a Home app tile.
 - Weather and prayer are independent: screensaver still works if one data source is unavailable.
@@ -78,7 +78,7 @@ Upstream `ClockScene` and `dream_clock.xml` show **only clock/date with glow on 
 
 ## Design review gates (before coding)
 
-- Owner approves **both** screen mockups and hierarchy; screenshots in `mockups/` are illustrative, with fake placeholder labels, not actual TV captures.
+- Owner approves the Home mockup and chooses between [Ambient concept A](mockups/ambient-mode.svg) and [Ambient concept B](mockups/ambient-mode-split.svg) (B recommended). Mockups in `mockups/` are illustrative, with synthetic scenery and demo labels, not actual TV captures.
 - Agree how many app tiles, whether app names always show, top controls and ambient widget positioning.
 - Agree photos stay *only* in Ambient Mode, not Home; status at v0.1: **proposed**, owner approval pending.
 - Agree local-only photo import, 60-second rotation, correct date-source behavior and weather failure state.
