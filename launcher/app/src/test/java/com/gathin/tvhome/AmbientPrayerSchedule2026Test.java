@@ -43,7 +43,7 @@ public final class AmbientPrayerSchedule2026Test {
         int[] day = AmbientPrayerSchedule2026.get(2026, 10, 22);
         assertEquals(0, AmbientInfoOverlay.nextPrayer(day, 200));
         assertEquals(1, AmbientInfoOverlay.nextPrayer(day, 300));
-        assertEquals(2, AmbientInfoOverlay.nextPrayer(day, 725));
+        assertEquals(2, AmbientInfoOverlay.nextPrayer(day, 730));
         assertEquals(3, AmbientInfoOverlay.nextPrayer(day, 1000));
         assertEquals(4, AmbientInfoOverlay.nextPrayer(day, 1090));
         assertEquals(-1, AmbientInfoOverlay.nextPrayer(day, 1200));
