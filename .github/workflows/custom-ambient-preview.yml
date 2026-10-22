@@ -1,0 +1,57 @@
+name: Custom Ambient Preview (non-HOME)
+
+on:
+  push:
+    branches:
+      - feature/custom-home-ambient
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ambient-preview:
+    name: Compile and test photo-only ambient preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests and independent preview APK
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PambientPreview=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview
+      - name: Inspect manifest safety (MainActivity disabled)
+        run: |
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml > "$RUNNER_TEMP/manifest.txt"
+          python3 - "$RUNNER_TEMP/manifest.txt" <<'PY'
+          import sys, re
+          text = open(sys.argv[1], encoding="utf-8").read()
+          # The preview must still be a regular launchable activity; HOME must be DISABLED.
+          main = text.split('com.gathin.tvhome.MainActivity', 1)
+          if len(main) != 2:
+              raise SystemExit('MainActivity missing from manifest')
+          # android:enabled on MainActivity is written in the attribute rows right after its name.
+          snippet = main[1][:1400]
+          if not re.search(r'android:enabled.*(0x0|false)', snippet):
+              raise SystemExit('MainActivity is not disabled in preview manifest')
+          ambient = text.split('com.gathin.tvhome.AmbientPhotoActivity', 1)
+          if len(ambient) != 2 or not re.search(r'android:enabled.*(0xffffffff|true|0x1)', ambient[1][:1400]):
+              raise SystemExit('AmbientPhotoActivity is not enabled in preview manifest')
+          print('Verified: disabled stock HOME component; enabled manual Ambient preview.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ambient-photo-only-preview-apk
+          path: launcher/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
