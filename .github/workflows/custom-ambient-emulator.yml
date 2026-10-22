@@ -58,20 +58,7 @@ jobs:
           ram-size: 2048M
           emulator-boot-timeout: 600
           disable-animations: false
-          script: |
-            set -eu
-            APK=launcher/app/build/outputs/apk/debug/app-debug.apk
-            adb install "$APK"
-            adb shell wm size 1920x1080
-            # Synthetic fixture is an explicitly imported LOCAL test photo.
-            PHOTO_DIR=/sdcard/Android/data/com.k3nnut.tvhome.ambient.preview/files/ambient_photos
-            adb shell mkdir -p "$PHOTO_DIR"
-            adb push artifacts/ambient-fixture.png "$PHOTO_DIR/ambient-synthetic.png"
-            adb shell am start -W -n com.k3nnut.tvhome.ambient.preview/com.gathin.tvhome.AmbientPhotoActivity
-            sleep 15
-            adb exec-out screencap -p > artifacts/ambient-emulator-screenshot.png
-            adb logcat -d -t 250 > artifacts/ambient-emulator-logcat.txt || true
-            python3 tests/ambient-visual/visual_smoke.py check artifacts/ambient-emulator-screenshot.png
+          script: bash tests/ambient-visual/run_emulator.sh
       - name: Attach screenshot and diagnostics (synthetic image only)
         if: always()
         uses: actions/upload-artifact@v4
