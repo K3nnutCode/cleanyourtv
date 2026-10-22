@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="Ambient screensaver mockup, showing a sample landscape placeholder under clock, weather and five Brunei prayer times">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#86AEC3"/><stop offset=".5" stop-color="#BFCDBD"/><stop offset=".79" stop-color="#D8BC91"/><stop offset="1" stop-color="#A3A58D"/></linearGradient>
+<linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4F7B79"/><stop offset="1" stop-color="#224750"/></linearGradient>
+<linearGradient id="lower" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#142E37" stop-opacity="0"/><stop offset=".37" stop-color="#101B27" stop-opacity=".65"/><stop offset="1" stop-color="#060C15" stop-opacity=".97"/></linearGradient>
+<radialGradient id="sun"><stop stop-color="#FFF5D6" stop-opacity=".88"/><stop offset=".4" stop-color="#FFF0B2" stop-opacity=".46"/><stop offset="1" stop-color="#FFF4CD" stop-opacity="0"/></radialGradient>
+</defs>
+<!-- A synthetic visual placeholder. Never a production or bundled screensaver image. -->
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<ellipse cx="1325" cy="300" rx="430" ry="260" fill="url(#sun)"/>
+<path d="M0 608 C190 515 410 520 570 570 C790 610 980 487 1160 510 C1360 537 1605 496 1920 556 L1920 1080 L0 1080Z" fill="#6E9994"/>
+<path d="M0 667 C210 597 355 580 530 623 C730 665 945 583 1130 601 C1350 625 1590 558 1920 643 L1920 1080 L0 1080Z" fill="url(#hill)"/>
+<path d="M0 766 C230 670 399 685 540 726 C720 771 950 694 1150 747 C1390 811 1650 658 1920 721 L1920 1080 L0 1080Z" fill="#28555A"/>
+<path d="M0 865 C190 804 450 837 600 858 C860 900 1120 807 1350 862 C1610 915 1740 819 1920 803 L1920 1080 L0 1080Z" fill="#163944"/>
+<rect x="0" y="507" width="1920" height="573" fill="url(#lower)"/>
+<!-- subtle top-level mockup disclosure; removed from actual implementation -->
+<rect x="698" y="42" width="524" height="45" rx="22" fill="#05101A" fill-opacity=".35" stroke="#FFFFFF" stroke-opacity=".25"/>
+<text x="960" y="70" font-family="Inter,Arial,sans-serif" font-size="17" letter-spacing="2.5" fill="#F9FCFF" text-anchor="middle">LAYOUT PLACEHOLDER  ·  USE ONLY YOUR PHOTOS</text>
+<text x="110" y="702" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="400" letter-spacing="4" fill="#E1E9EF">THURSDAY, 22 OCTOBER</text>
+<text x="99" y="856" font-family="Inter,Arial,sans-serif" font-size="142" font-weight="200" letter-spacing="-8" fill="#FDFDFF">20:37</text>
+<text x="111" y="907" font-family="Inter,Arial,sans-serif" font-size="24" fill="#CDD7DF" letter-spacing="2.5">BRUNEI DARUSSALAM  ·  ASIA/BRUNEI</text>
+<g font-family="Inter,Arial,sans-serif" fill="#F9FBFE" text-anchor="end">
+<text x="1824" y="778" font-size="74" font-weight="250">28°</text>
+<text x="1824" y="822" font-size="26" letter-spacing="1.5">Partly cloudy</text>
+<text x="1824" y="862" font-size="20" fill="#CED7E2" letter-spacing="3">WEATHER · SAMPLE</text>
+</g>
+<line x1="110" y1="948" x2="1819" y2="948" stroke="#DCE5EC" stroke-opacity=".33" stroke-width="2"/>
+<g font-family="Inter,Arial,sans-serif">
+<text x="115" y="987" fill="#E1D1B8" font-size="18" font-weight="600" letter-spacing="2.1">SUBUH  ·  NEXT</text>
+<text x="115" y="1038" fill="#FFF7E9" font-size="40" font-weight="400">05:15</text>
+<rect x="112" y="1050" width="134" height="4" rx="2" fill="#E8D1A2"/>
+<text x="452" y="987" fill="#CED8E0" font-size="18" letter-spacing="2.3">ZOHOR</text>
+<text x="452" y="1038" fill="#F6F9FC" font-size="40" font-weight="400">12:20</text>
+<text x="787" y="987" fill="#CED8E0" font-size="18" letter-spacing="2.3">ASAR</text>
+<text x="787" y="1038" fill="#F6F9FC" font-size="40" font-weight="400">15:35</text>
+<text x="1119" y="987" fill="#CED8E0" font-size="18" letter-spacing="2.3">MAGHRIB</text>
+<text x="1119" y="1038" fill="#F6F9FC" font-size="40" font-weight="400">18:07</text>
+<text x="1487" y="987" fill="#CED8E0" font-size="18" letter-spacing="2.3">ISYAK</text>
+<text x="1487" y="1038" fill="#F6F9FC" font-size="40" font-weight="400">19:17</text>
+</g>
+<text x="1819" y="59" font-family="Inter,Arial,sans-serif" font-size="15" text-anchor="end" letter-spacing="1.2" fill="#132732">PRAYER &amp; WEATHER FIGURES ARE ILLUSTRATIVE ONLY</text>
+</svg>
