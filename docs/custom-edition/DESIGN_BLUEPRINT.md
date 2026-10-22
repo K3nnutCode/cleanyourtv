@@ -19,11 +19,11 @@
 | Clock/greeting | x=100–440, y=72–250 | Minimal date + time; compact not a dashboard |
 | Top controls | x=1360–1830, y=72–145 | Inputs, network, Settings, with TV remote navigation |
 | Negative space | center/middle | Deliberate black; no media data or information cards |
-| Focused app title | x≈395, y≈610–695 | One expressive label, subtle colored glow |
-| Dock | x≈365–1555, y≈742–938 | 4 default favourites; dark charcoal band; 4 equal tiles |
-| App drawer hint | center bottom | Quiet `↓ ALL APPS`; arrow navigation preserved |
+| Focused app title | x≈115–700, y≈555–650 | Large light title above the dock, like original CleanYourTV, with restrained artwork-color glow |
+| Dock | x≈116–1803, y≈696–956 | One wide charcoal rounded band, four **landscape TV app banners**, one floating glass focus outline; app-provided artwork at runtime |
+| App grid | below y≈1030, slides up on Down | Installed apps in the original grid. **No All Apps button in the dock.** |
 
-**Interaction states:** focus slides across one band smoothly, focused app tile lifts slightly; Down opens installed apps/library without a major scene transition; Back returns to dock, and Input/Settings remote buttons work. No unnecessary loading animations.
+**Interaction states:** exactly the original CleanYourTV dock behavior is the design reference: four roughly 1.8:1 landscape app banners inside one long near-black rounded shelf; individual dock items have no persistent labels under them; one translucent glass highlight glides between banners, selected tile lifts slightly, and the large app name appears **above** the shelf. Down reveals the installed-app grid; Back returns to dock, and Inputs/Settings remote buttons work. Use installed app TV banners at runtime, not hardcoded example logo drawings or square mobile icons. No unnecessary loading animations.
 
 ## Ambient: reference screen 1920×1080
 
@@ -53,7 +53,7 @@ Current upstream `ClockDream.java` renders only `ClockScene` into `dream_clock.x
 
 ## Review prompts
 
-1. Is Home's four-app dock and completely dark background the right level of simplicity?
+1. Does the **original CleanYourTV wide-banner dock** and completely dark Home look right now? Its logos in the SVG are only placeholders; production will use installed app TV banners.
 2. Do you prefer Ambient data at the **bottom** as drawn, or time at top-left/weather top-right/prayers bottom?
 3. Should the Ambient timetable show five prayer times by default, or next prayer only? The drawing selects five.
 4. Approve these two compositions **before any launcher code changes or TV debloating**.
