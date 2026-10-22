@@ -10,6 +10,11 @@ android {
     // Its MainActivity is disabled, so it cannot take the system HOME role accidentally.
     def ambientPreview = providers.gradleProperty('ambientPreview').map { it.toBoolean() }.getOrElse(false)
 
+    // Separate manual opt-in DreamService feature; impossible to enable on the
+    // default launcher build or on earlier manual-only preview packages.
+    def ambientDreamPreview = ambientPreview &&
+            providers.gradleProperty('ambientDreamPreview').map { it.toBoolean() }.getOrElse(false)
+
     // Default launcher remains network-free. Only explicit Ambient previews get INTERNET.
     sourceSets {
         main {
@@ -21,7 +26,8 @@ android {
     defaultConfig {
         manifestPlaceholders = [
                 mainActivityEnabled: (!ambientPreview).toString(),
-                ambientPreviewEnabled: ambientPreview.toString()
+                ambientPreviewEnabled: ambientPreview.toString(),
+                ambientDreamEnabled: ambientDreamPreview.toString()
         ]
         // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
