@@ -9,20 +9,6 @@
 
     <!-- Network is used only by the ambient weather overlay, never by the stock launcher build. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- Needed since Android 10 to read the Wi-Fi network name for the network pill. Never requested at
-         runtime: build-and-install grants it with pm grant, so lint's Android 12 "ask for COARSE with
-         FINE" rule does not apply here. -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
-        tools:ignore="CoarseFineLocation" />
-    <!-- Puts the remote's accessibility helpers back after a force stop of this app took them off the enabled
-         list (ServiceRepair). Granted with pm grant by build-and-install when a helper is enabled. -->
-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- YaOS (Yandex TV OS): HDMI, AV and the tuner all play in com.yandex.tv.live, whose activities require
-         this permission (protection level normal, so it is granted at install). Ignored on other TVs. -->
-    <uses-permission android:name="yandex.tv.permission.ACCESS_TV_SOURCE" />
 
     <!-- Android 11+ package visibility: lets the launcher list the TV apps it shows as tiles, and the
          apps that declare a module card (docs/specs/card.md). -->
@@ -153,6 +139,7 @@
              build-and-install.sh; see HomeKeyService. -->
         <service
             android:name=".HomeKeyService"
+            android:enabled="false"
             android:label="@string/home_key_name"
             android:directBootAware="true"
             android:exported="true"
@@ -177,6 +164,7 @@
              com.gathin.tvhome/.ClockDream` over adb. -->
         <service
             android:name=".ClockDream"
+            android:enabled="false"
             android:label="@string/dream_name"
             android:exported="true"
             android:permission="android.permission.BIND_DREAM_SERVICE">
@@ -190,6 +178,7 @@
              see ThemeProvider. WRITE_SECURE_SETTINGS: the adb shell has it, ordinary apps don't. -->
         <provider
             android:name=".ThemeProvider"
+            android:enabled="false"
             android:authorities="${applicationId}.theme"
             android:exported="true"
             android:permission="android.permission.WRITE_SECURE_SETTINGS" />
@@ -198,6 +187,7 @@
          app_keys (config.xml or a theme) bring back other remote buttons; see InputKeyService. -->
         <service
             android:name=".InputKeyService"
+            android:enabled="false"
             android:exported="false"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
