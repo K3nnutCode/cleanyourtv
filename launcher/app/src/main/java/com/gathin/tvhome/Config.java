@@ -445,6 +445,13 @@ final class Config {
         Festival festival = json == null ? Festival.NONE : Festival.parse(string(json, "festival", ""),
                 string(json, "festival_until", ""), string(json, "greeting", ""), string(json, "accent_color", ""));
 
+        // Four-dock owner customization ONLY in the ordinary-app Home preview.
+        // Keep the upstream default and any explicit user theme on every other build.
+        // Missing Stremio falls back to the existing fill_dock behavior.
+        if (ctx instanceof HomePreviewActivity && json == null && dock.size() >= 4) {
+            dock.set(3, "com.stremio.one");
+        }
+
         return new Config(dock, fillDock, hidden, liveTv, liveTvAction, liveTvInputId, packageMap(launchActions), packageMap(appLabels),
                 packageMap(appBanners), panelService,
                 panelAction, panelExtra, coocaaSources, inputAction, inputUriScheme,
