@@ -2,13 +2,11 @@ package com.gathin.tvhome;
 
 import android.content.Context;
 import android.net.Uri;
-import android.webkit.MimeTypeMap;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -26,8 +24,9 @@ final class AmbientPhotoRepository {
     private AmbientPhotoRepository() { }
 
     static File directory(Context context) {
-        File external = context.getExternalFilesDir("ambient_photos");
-        File result = external != null ? external : new File(context.getFilesDir(), "ambient_photos");
+        // App-private storage is reliable on Android TV 11 and cannot be read by
+        // unrelated apps. SAF imports copy selected bytes here; no storage grants.
+        File result = new File(context.getFilesDir(), "ambient_photos");
         if (!result.isDirectory() && !result.mkdirs() && !result.isDirectory()) {
             throw new IllegalStateException("Unable to create Ambient photo directory");
         }
