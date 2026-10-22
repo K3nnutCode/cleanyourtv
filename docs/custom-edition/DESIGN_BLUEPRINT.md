@@ -1,6 +1,6 @@
 # Custom Edition — Visual Blueprint (v0.1)
 
-**This is a design proposal, not the currently implemented launcher.** All shown content in mockups is illustrative; photo art is a deliberately synthetic **placeholder**, never an image to ship on the TV. Clock/weather/prayer figures are mock labels, **not actual date-specific weather or official prayer times**.
+**Concept B and the original CleanYourTV dock are approved visual directions. This is a design blueprint, not proof of a finished working launcher.** All shown content in mockups is illustrative; photo art is a deliberately synthetic **placeholder**, never an image to ship on the TV. Clock/weather/prayer figures are mock labels, **not actual date-specific weather or official prayer times**.
 
 - [Home mockup — 1920×1080 SVG](mockups/home-mode.svg)
 - [Ambient concept A: consolidated bottom information — 1920×1080](mockups/ambient-mode.svg)
@@ -28,7 +28,7 @@
 
 ## Ambient: reference screen 1920×1080
 
-Two composition options are saved rather than silently replacing the previous concept. **Concept B (split corners) is our proposed next-stage direction**, pending owner reaction. It keeps a wide unobstructed middle region for people's faces, unlike a large permanent glass dashboard.
+Two composition options are saved rather than silently replacing the previous concept. **Concept B (split corners) was explicitly selected by the owner on 22 October 2026**. It keeps a wide unobstructed middle region for people's faces, unlike a large permanent glass dashboard.
 
 | Region | Suggested bounds | Behavior |
 |---|---|---|
@@ -58,6 +58,6 @@ Current upstream `ClockDream.java` renders only `ClockScene` into `dream_clock.x
 ## Review prompts
 
 1. Does the **original CleanYourTV wide-banner dock** and completely dark Home look right now? Its logos in the SVG are only placeholders; production will use installed app TV banners.
-2. Please compare [Concept A](mockups/ambient-mode.svg) (everything along bottom) vs [Concept B](mockups/ambient-mode-split.svg) (time left/top, weather right/top, prayers footer). Concept B is recommended to preserve more of your photo.
+2. **Decision complete:** owner chose [Concept B](mockups/ambient-mode-split.svg). It keeps the center of their photos free and puts clock and weather in the corners, prayers in the footer.
 3. Should the Ambient timetable show five prayer times by default, or next prayer only? The drawing selects five.
-4. Confirm one Ambient composition **before any launcher code changes or TV debloating**. Photos/data shown are mock placeholders, not content imported from your TV.
+4. **Composition approved; proceed with a separate reversible photo-only preview prototype on this development branch.** No system-package changes, TV installation or Home takeover without explicit approval.
