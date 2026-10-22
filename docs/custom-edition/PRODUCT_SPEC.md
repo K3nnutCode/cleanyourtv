@@ -21,8 +21,8 @@ Make exactly two clear visual modes:
 - Very dark neutral/near-black screen and generous empty space. No photo slideshow or recommendation feed on Home by default.
 - Top left: minimal date and time; original CleanYourTV's greeting may remain if aesthetically consistent.
 - Top right: compact Inputs, connection and Settings controls; reuse actual app routing and the native TV input framework.
-- Lower center: **four favourite app tiles by default** (owner can choose 4–6 later), a single moving translucent focus/highlight, modest focused name/ambient accent, no independent borders around each tile.
-- Press Down: original CleanYourTV app grid/library; Back restores prior focus. Press Up as appropriate to top actions. D-pad and real remote have precedence over animations.
+- Lower middle: preserve **CleanYourTV's original four-wide-TV-banner dock** by default, inside one continuous rounded near-black band. Use real installed app banners (not hardcoded icon substitutes). User can configure app selection/order; a single translucent glass highlight follows focus, and selected tile rises slightly. The selected app's name appears large **above** the dock, with restrained artwork-derived ambient glow; **do not put persistent labels underneath the four dock banners**.
+- Press Down: original CleanYourTV app grid/library; Back restores prior focus. Press Up as appropriate to top actions. **All Apps is not a fifth dock tile.** D-pad and real remote have precedence over animations.
 - Optional quick link to Ambient Mode in Settings or long-press menu; never another permanent large tile unless requested.
 - No intrusive permissions or forced app promos. Weather/prayers absent from Home by design; only in Ambient Mode.
 - All functionality based on the upstream reference implementation where possible. Avoid rewriting its launcher layout, source switching and focus engine before a baseline comparison.
@@ -95,7 +95,7 @@ Upstream `ClockScene` and `dream_clock.xml` show **only clock/date with glow on 
 
 ## Acceptance checklist
 
-- [ ] Home looks close to CleanYourTV; only app dock, compact clock/date and small top controls.
+- [ ] Home uses CleanYourTV's **four landscape TV banners in one dark dock band**, selected app title above the dock, a single focus glass, compact clock/date and small top controls; no stacked square icon buttons or fake brand art.
 - [ ] D-pad focus/app library/Inputs/Settings work and are readable.
 - [ ] Ambient shows only explicitly imported local photos, time/date, weather and prayer times.
 - [ ] No photo stretching, unintended stock images, app artwork, recommendations or ads inside either custom mode.
