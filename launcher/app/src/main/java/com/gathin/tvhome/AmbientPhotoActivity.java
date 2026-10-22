@@ -31,6 +31,7 @@ public final class AmbientPhotoActivity extends Activity {
     private static final int PICK_PHOTOS = 41;
     private final ExecutorService importer = Executors.newSingleThreadExecutor();
     private AmbientSlideshow slideshow;
+    private AmbientInfoOverlay information;
     private LinearLayout emptyPanel;
     private TextView status;
     private TextView hint;
@@ -44,6 +45,9 @@ public final class AmbientPhotoActivity extends Activity {
         screen.setFocusableInTouchMode(true);
         slideshow = new AmbientSlideshow(this);
         screen.addView(slideshow, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        information = new AmbientInfoOverlay(this);
+        screen.addView(information, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         emptyPanel = new LinearLayout(this);
@@ -113,6 +117,9 @@ public final class AmbientPhotoActivity extends Activity {
     private void updateEmptyState() {
         boolean empty = AmbientPhotoRepository.photos(this).isEmpty();
         emptyPanel.setVisibility(empty ? View.VISIBLE : View.GONE);
+        information.setVisibility(empty ? View.GONE : View.VISIBLE);
+        if (empty) information.stop();
+        else if (hasWindowFocus()) information.start();
         hint.setVisibility(empty ? View.GONE : View.VISIBLE);
     }
 
@@ -172,11 +179,13 @@ public final class AmbientPhotoActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (slideshow != null) slideshow.start();
+        if (information != null && !AmbientPhotoRepository.photos(this).isEmpty()) information.start();
     }
 
     @Override
     protected void onPause() {
         if (slideshow != null) slideshow.stop();
+        if (information != null) information.stop();
         super.onPause();
     }
 
@@ -184,6 +193,7 @@ public final class AmbientPhotoActivity extends Activity {
     protected void onDestroy() {
         closed = true;
         if (slideshow != null) slideshow.close();
+        if (information != null) information.close();
         importer.shutdownNow();
         super.onDestroy();
     }
