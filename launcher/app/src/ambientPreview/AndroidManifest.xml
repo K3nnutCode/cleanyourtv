@@ -152,6 +152,22 @@
                 android:resource="@xml/home_key_service" />
         </service>
 
+        <!-- Separate, opt-in Concept B native system screensaver.
+             Enabled only for ambientDreamPreview=true builds (v5). The TV owner
+             must explicitly select this component in native screensaver settings.
+             This service is NOT a HOME handler and never accepts LAN uploads. -->
+        <service
+            android:name=".AmbientPhotoDream"
+            android:enabled="${ambientDreamEnabled}"
+            android:exported="true"
+            android:label="Concept B · Personal Photos"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+
         <!-- The same clock, started by Home itself after home_idle_clock_minutes without input. -->
         <activity
             android:name=".ClockActivity"
