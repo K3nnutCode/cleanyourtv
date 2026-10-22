@@ -6,7 +6,15 @@ android {
     namespace 'com.gathin.tvhome'
     compileSdk 34
 
+    // Independent proof-of-concept: the preview package exposes ONLY an Ambient launcher activity.
+    // Its MainActivity is disabled, so it cannot take the system HOME role accidentally.
+    def ambientPreview = providers.gradleProperty('ambientPreview').map { it.toBoolean() }.getOrElse(false)
+
     defaultConfig {
+        manifestPlaceholders = [
+                mainActivityEnabled: (!ambientPreview).toString(),
+                ambientPreviewEnabled: ambientPreview.toString()
+        ]
         // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
         minSdk 26
