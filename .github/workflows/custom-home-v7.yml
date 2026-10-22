@@ -1,0 +1,88 @@
+name: CleanYourTV Home v7 (non-HOME test APK)
+
+on:
+  push:
+    branches:
+      - feature/custom-home-ambient
+    paths:
+      - .github/workflows/custom-home-v7.yml
+      - launcher/app/build.gradle
+      - launcher/app/src/homePreview/**
+      - launcher/app/src/main/java/com/gathin/tvhome/HomePreviewActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java
+      - launcher/app/src/main/java/com/gathin/tvhome/Config.java
+      - launcher/app/src/main/java/com/gathin/tvhome/DockDecoration.java
+      - launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+      - launcher/app/src/main/res/values/config.xml
+      - launcher/app/src/main/res/layout/activity_main.xml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  home-preview:
+    name: Build and audit independent Home UI test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and test original CleanYourTV Home preview
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PhomePreview=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.home.preview.v7
+      - name: Assert never a HOME handler and no sensitive permissions
+        run: |
+          set -e
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt"
+          "$AAPT" dump badging "$APK" > "$RUNNER_TEMP/badging.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$RUNNER_TEMP/manifest.txt"
+          python3 - "$RUNNER_TEMP/badging.txt" "$RUNNER_TEMP/manifest.txt" <<'PY'
+          import re,sys
+          badging=open(sys.argv[1],encoding="utf8").read()
+          xml=open(sys.argv[2],encoding="utf8").read()
+          assert "package: name='com.k3nnut.tvhome.home.preview.v7'" in badging
+          def section(name):
+              s=xml.split("com.gathin.tvhome."+name,1)
+              if len(s)!=2: raise SystemExit("Missing component "+name)
+              return s[1][:1500]
+          if "android.intent.category.HOME" in xml:
+              raise SystemExit("Unsafe: the v7 test package declares a HOME filter")
+          if not re.search(r"android:enabled.*(?:0x0|false)",section("MainActivity")):
+              raise SystemExit("Original MainActivity must be disabled")
+          if not re.search(r"android:enabled.*(?:0xffffffff|0x1|true)",section("HomePreviewActivity")):
+              raise SystemExit("HomePreviewActivity not enabled")
+          for name in ["AmbientPhotoActivity","AmbientPhotoDream","ClockDream"]:
+              if not re.search(r"android:enabled.*(?:0x0|false)",section(name)):
+                  raise SystemExit("Non-Home component should be disabled: "+name)
+          for forbidden in ["android.permission.INTERNET", "android.permission.WRITE_SECURE_SETTINGS",
+                            "android.permission.ACCESS_FINE_LOCATION",
+                            "android.permission.BIND_ACCESSIBILITY_SERVICE"]:
+              # BIND_ACCESSIBILITY_SERVICE may appear as manifest protection on a disabled
+              # upstream accessibility service; it is not an app-requested permission.
+              if forbidden == "android.permission.BIND_ACCESSIBILITY_SERVICE":
+                  continue
+              if re.search(r"uses-permission: name='"+re.escape(forbidden),badging):
+                  raise SystemExit("Unsafe app permission: "+forbidden)
+          if not re.search(r"android.intent.category.LEANBACK_LAUNCHER",section("HomePreviewActivity")):
+              raise SystemExit("No TV app launcher entry")
+          print("PASS: v7 ordinary TV app, stock HOME intact; no network/GPS/secure-write request")
+          PY
+      - name: Publish separate Home preview debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleanyourtv-home-v7-non-home-preview-apk
+          path: launcher/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 21
