@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-label="Concept B: photo-centric screensaver, clock in top left, weather in top right, five daily Brunei-Muara prayers along bottom. Photo and values illustrative only.">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2=".18" y2="1"><stop stop-color="#7FAAB9"/><stop offset=".58" stop-color="#CDD6CD"/><stop offset="1" stop-color="#F4D5A6"/></linearGradient>
+ <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#A3C7B8"/><stop offset="1" stop-color="#567F79"/></linearGradient>
+ <linearGradient id="topShade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#031722" stop-opacity=".52"/><stop offset=".6" stop-color="#041A26" stop-opacity=".10"/><stop offset="1" stop-color="#031722" stop-opacity="0"/></linearGradient>
+ <linearGradient id="bottomShade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#081922" stop-opacity="0"/><stop offset=".38" stop-color="#0B1922" stop-opacity=".35"/><stop offset="1" stop-color="#071018" stop-opacity=".88"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#FFF7D5" stop-opacity=".9"/><stop offset=".35" stop-color="#FFF4D5" stop-opacity=".3"/><stop offset="1" stop-color="#FFF4D5" stop-opacity="0"/></radialGradient>
+ <filter id="textShadow" x="-20%" y="-30%" width="140%" height="165%"><feDropShadow dx="0" dy="2" stdDeviation="8" flood-opacity=".47"/></filter>
+</defs>
+<!-- Stylized PHOTO PLACEHOLDER: actual app must display ONLY photos chosen by owner. -->
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<ellipse cx="1245" cy="332" rx="480" ry="300" fill="url(#sun)"/>
+<path d="M0 600 Q180 492 350 516 Q520 455 705 555 Q840 495 973 523 Q1223 414 1426 529 Q1690 453 1920 551 L1920 1080 L0 1080Z" fill="#7EAAA2"/>
+<path d="M0 685 C250 542 415 588 660 641 C935 700 1153 550 1439 605 C1655 540 1790 560 1920 629 L1920 1080 L0 1080Z" fill="#507B78"/>
+<path d="M0 792 Q330 734 585 760 Q920 707 1186 743 Q1465 704 1920 780 L1920 1080 L0 1080Z" fill="url(#water)"/>
+<path d="M0 856 C255 803 418 834 670 899 Q980 859 1300 895 Q1590 834 1920 872 L1920 1080 L0 1080Z" fill="#3D7470" opacity=".77"/>
+<path d="M0 1004 C250 930 475 977 695 1027 Q1120 915 1480 978 Q1714 940 1920 1022 L1920 1080 L0 1080Z" fill="#234F50" opacity=".86"/>
+<!-- Overlay ONLY where text needs contrast. Photo center stays clean and unobstructed. -->
+<rect width="1920" height="395" fill="url(#topShade)"/>
+<rect y="705" width="1920" height="375" fill="url(#bottomShade)"/>
+<!-- Clock top left -->
+<g font-family="Arial, sans-serif" filter="url(#textShadow)">
+ <text x="105" y="133" fill="#EDF4F7" font-size="22" font-weight="500" letter-spacing="4.6">THURSDAY  ·  22 OCTOBER</text>
+ <text x="94" y="296" fill="#FFFFFF" font-size="164" font-weight="200" letter-spacing="-8">15:08</text>
+ <text x="107" y="347" fill="#E4EDF0" font-size="23" letter-spacing="3">BRUNEI DARUSSALAM</text>
+</g>
+<!-- weather top right, no giant card -->
+<g font-family="Arial, sans-serif" filter="url(#textShadow)">
+ <g transform="translate(1473 157)" fill="none" stroke="#F8FCFF" stroke-linecap="round" stroke-width="7">
+   <path d="M2 40 Q-3 19 20 18 Q28 -2 50 7 Q61 -7 82 3 Q104 3 105 26 Q121 25 121 45 Q119 61 102 61 H27 Q2 61 2 40Z" fill="#F6F9FB" stroke="none"/>
+   <path d="M30 77 l-7 22 M65 77 l-7 22 M100 77 l-7 22" stroke="#BDE4FC"/>
+ </g>
+ <text x="1813" y="206" fill="#FFFFFF" font-size="94" font-weight="200" text-anchor="end">29°</text>
+ <text x="1813" y="256" fill="#F1F6F9" font-size="27" text-anchor="end" letter-spacing="1.3">Drizzle</text>
+ <text x="1813" y="295" fill="#D8E2E9" font-size="19" text-anchor="end" letter-spacing="2.5">BANDAR SERI BEGAWAN</text>
+</g>
+<!-- bottom prayers: five small aligned data groups, no heavy dark banner -->
+<text x="108" y="869" fill="#E7ECF0" font-family="Arial,sans-serif" font-size="21" font-weight="600" letter-spacing="3.4">WAKTU SOLAT  ·  BRUNEI-MUARA</text>
+<text x="1811" y="870" fill="#E9D4A0" font-family="Arial,sans-serif" font-size="20" text-anchor="end" letter-spacing="1.1">NEXT: ASAR</text>
+<line x1="108" y1="889" x2="1810" y2="889" stroke="#FFFFFF" stroke-opacity=".29" stroke-width="2"/>
+<g font-family="Arial,sans-serif">
+ <text x="110" y="945" fill="#D9E1E8" font-size="23">Subuh</text><text x="110" y="1020" fill="#FDFEFF" font-size="46" font-weight="400">04:47</text>
+ <text x="446" y="945" fill="#D9E1E8" font-size="23">Zohor</text><text x="446" y="1020" fill="#FDFEFF" font-size="46" font-weight="400">12:06</text>
+ <rect x="772" y="904" width="280" height="146" rx="23" fill="#FFF5C9" fill-opacity=".12" stroke="#E8D39D" stroke-opacity=".7" stroke-width="2"/>
+ <text x="805" y="945" fill="#FFE8AE" font-size="23" font-weight="600">Asar</text><text x="805" y="1020" fill="#FFECBD" font-size="46" font-weight="500">15:24</text>
+ <text x="1150" y="945" fill="#D9E1E8" font-size="23">Maghrib</text><text x="1150" y="1020" fill="#FDFEFF" font-size="46" font-weight="400">18:04</text>
+ <text x="1502" y="945" fill="#D9E1E8" font-size="23">Isyak</text><text x="1502" y="1020" fill="#FDFEFF" font-size="46" font-weight="400">19:14</text>
+</g>
+<!-- Never shipped; visible concept disclosure -->
+<text x="957" y="80" text-anchor="middle" fill="#17323D" fill-opacity=".7" font-family="Arial,sans-serif" font-size="20" font-weight="600" letter-spacing="2.3">ILLUSTRATIVE PHOTO PLACEHOLDER · MOCK VALUES · NO REAL DATA</text>
+</svg>
