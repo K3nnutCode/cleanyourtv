@@ -1,10 +1,7 @@
 package com.gathin.tvhome;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.ClipData;
-import android.content.Intent;
-import android.net.Uri;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -15,26 +12,25 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.IOException;
 
 /**
- * Manual, standalone preview of the Ambient photos feature.
+ * Manually launched Concept B Ambient preview — never an Android HOME activity.
  *
- * Only enabled in -PambientPreview=true builds, whose regular Home activity
- * is disabled. Not a DreamService yet: real system screensaver hookup is a
- * separate phase requiring owner approval and TCL validation.
+ * On this TCL model there is no system Documents photo picker. Instead the
+ * owner starts a short-lived local Wi-Fi upload session using the TV remote.
+ * The server stops on exit/Back, expiry, or app lifecycle pause.
  */
 public final class AmbientPhotoActivity extends Activity {
-    private static final int PICK_PHOTOS = 41;
-    private final ExecutorService importer = Executors.newSingleThreadExecutor();
     private AmbientSlideshow slideshow;
     private AmbientInfoOverlay information;
     private LinearLayout emptyPanel;
     private TextView status;
     private TextView hint;
+    private AlertDialog uploadDialog;
+    private AmbientLocalUploadServer uploader;
+    private TextView uploadStatus;
+    private int uploadGeneration;
     private boolean closed;
 
     @Override
@@ -63,7 +59,7 @@ public final class AmbientPhotoActivity extends Activity {
         emptyPanel.addView(heading);
 
         status = new TextView(this);
-        status.setText("Choose your photos to begin. No stock photos or online content.");
+        status.setText("Add your own photos directly from your PC or phone on the same home Wi-Fi.");
         status.setTextSize(20);
         status.setTextColor(0xFFC8CFD9);
         status.setGravity(Gravity.CENTER);
@@ -72,21 +68,22 @@ public final class AmbientPhotoActivity extends Activity {
         copy.topMargin = dp(18);
         emptyPanel.addView(status, copy);
 
-        Button pick = new Button(this);
-        pick.setText("Choose local photos");
-        pick.setTextSize(20);
-        pick.setOnClickListener(v -> openPicker());
+        Button wifi = new Button(this);
+        wifi.setText("Upload photos over Wi-Fi");
+        wifi.setTextSize(22);
+        wifi.setOnClickListener(v -> showUploader());
         LinearLayout.LayoutParams button = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         button.topMargin = dp(28);
-        emptyPanel.addView(pick, button);
+        emptyPanel.addView(wifi, button);
 
         FrameLayout.LayoutParams center = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER);
         screen.addView(emptyPanel, center);
 
         hint = new TextView(this);
-        hint.setText("Preview only  ·  OK: add photos  ·  Back: exit");
+        hint.setText("Preview only  ·  OK: upload photos  ·  Back: exit");
         hint.setTextColor(0xFFE5E9F0);
         hint.setTextSize(17);
         hint.setPadding(dp(24), dp(15), dp(24), dp(15));
@@ -102,16 +99,27 @@ public final class AmbientPhotoActivity extends Activity {
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         updateEmptyState();
         if (emptyPanel.getVisibility() == View.VISIBLE) {
-            pick.requestFocus();
+            wifi.requestFocus();
         } else {
             hint.postDelayed(() -> {
-                if (!closed) hint.setVisibility(View.GONE);
-            }, 8000L);
+                if (!closed && uploader == null) hint.setVisibility(View.GONE);
+            }, 8000);
         }
     }
 
     private int dp(float value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private TextView infoLine(String message, int sp, int color) {
+        TextView view = new TextView(this);
+        view.setText(message);
+        view.setTextSize(sp);
+        view.setTextColor(color);
+        view.setGravity(Gravity.CENTER);
+        view.setPadding(dp(12), dp(8), dp(12), dp(8));
+        view.setTextIsSelectable(true); // Remote-friendly: copying is optional, not required.
+        return view;
     }
 
     private void updateEmptyState() {
@@ -120,70 +128,94 @@ public final class AmbientPhotoActivity extends Activity {
         information.setVisibility(empty ? View.GONE : View.VISIBLE);
         if (empty) information.stop();
         else if (hasWindowFocus()) information.start();
-        hint.setVisibility(empty ? View.GONE : View.VISIBLE);
+        hint.setVisibility(empty || uploader != null ? View.GONE : View.VISIBLE);
     }
 
-    private void openPicker() {
-        Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        picker.setType("image/*");
-        picker.addCategory(Intent.CATEGORY_OPENABLE);
-        picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    private void showUploader() {
+        if (closed || uploadDialog != null) return;
+        final int generation = ++uploadGeneration;
         try {
-            startActivityForResult(picker, PICK_PHOTOS);
-        } catch (ActivityNotFoundException noPicker) {
-            status.setText("This TV has no compatible photo picker. Photos can also be copied"
-                    + " into this preview app's ambient_photos folder over ADB.");
-            emptyPanel.setVisibility(View.VISIBLE);
-            hint.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != PICK_PHOTOS || resultCode != RESULT_OK || data == null) return;
-        List<Uri> selected = new ArrayList<>();
-        ClipData clip = data.getClipData();
-        if (clip != null) {
-            for (int i = 0; i < clip.getItemCount() && i < 100; i++) {
-                selected.add(clip.getItemAt(i).getUri());
-            }
-        } else if (data.getData() != null) {
-            selected.add(data.getData());
-        }
-        if (selected.isEmpty()) return;
-        status.setText("Importing selected photos…");
-        emptyPanel.setVisibility(View.VISIBLE);
-        hint.setVisibility(View.GONE);
-        importer.execute(() -> {
-            int count = AmbientPhotoRepository.importSelected(this, selected);
-            runOnUiThread(() -> {
-                if (closed) return;
-                slideshow.refresh();
-                updateEmptyState();
-                if (emptyPanel.getVisibility() == View.VISIBLE) {
-                    status.setText("No supported photo could be imported. Choose JPG, PNG or WebP,"
-                            + " up to 10 MB each.");
-                } else {
-                    hint.setText(count + " photo(s) imported  ·  OK: add more  ·  Back: exit");
-                    hint.postDelayed(() -> {
-                        if (!closed) hint.setVisibility(View.GONE);
-                    }, 8000L);
+            uploader = new AmbientLocalUploadServer(this, new AmbientLocalUploadServer.Listener() {
+                @Override public void onPhotoAdded(int count) {
+                    if (closed || generation != uploadGeneration) return;
+                    slideshow.refresh();
+                    updateEmptyState();
+                    if (uploadStatus != null) {
+                        uploadStatus.setText(count + " photo(s) on TV. Add more from the browser,"
+                                + " or select Stop uploading to return to your screensaver.");
+                    }
+                }
+                @Override public void onStopped(String reason) {
+                    if (closed || generation != uploadGeneration) return;
+                    if (uploadStatus != null) uploadStatus.setText(reason);
                 }
             });
-        });
+        } catch (IOException failure) {
+            uploader = null;
+            new AlertDialog.Builder(this)
+                    .setTitle("Wi-Fi upload unavailable")
+                    .setMessage("Connect this TV and your PC/phone to the same trusted home"
+                            + " Wi-Fi or Ethernet network. Then try again.\n\n"
+                            + failure.getMessage())
+                    .setPositiveButton("OK", null)
+                    .show();
+            return;
+        }
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.CENTER_HORIZONTAL);
+        content.setPadding(dp(24), dp(12), dp(24), dp(14));
+
+        content.addView(infoLine("On your PC or phone, open this address:", 20, 0xFFCDD4DF));
+        TextView url = infoLine(uploader.address(), 27, 0xFFFFFFFF);
+        url.setTypeface(android.graphics.Typeface.MONOSPACE);
+        content.addView(url);
+        content.addView(infoLine("Enter this 8-character code in the browser:", 19, 0xFFCDD4DF));
+        TextView pin = infoLine(uploader.accessCode(), 35, 0xFFFFE9AE);
+        pin.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+        content.addView(pin);
+
+        uploadStatus = infoLine("Choose JPG, PNG or WebP photos in your browser."
+                + " 10 MB each, up to 100 on this TV.", 19, 0xFFCFDAE6);
+        content.addView(uploadStatus);
+        content.addView(infoLine("Uploads work only on this local network. The address uses"
+                + " unencrypted HTTP: use trusted home Wi-Fi only. Automatically closes after"
+                + " 10 minutes.", 15, 0xFFB6BEC8));
+
+        uploadDialog = new AlertDialog.Builder(this)
+                .setTitle("Upload photos over Wi-Fi")
+                .setView(content)
+                .setNegativeButton("Stop uploading", (dialog, which) -> stopUploader())
+                .create();
+        uploadDialog.setOnDismissListener(dialog -> stopUploader());
+        uploadDialog.show();
+    }
+
+    private void stopUploader() {
+        uploadGeneration++;
+        if (uploader != null) {
+            uploader.close();
+            uploader = null;
+        }
+        AlertDialog dialog = uploadDialog;
+        uploadDialog = null;
+        uploadStatus = null;
+        if (dialog != null && dialog.isShowing()) dialog.dismiss();
+        if (!closed && slideshow != null) updateEmptyState();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         if (slideshow != null) slideshow.start();
-        if (information != null && !AmbientPhotoRepository.photos(this).isEmpty()) information.start();
+        if (information != null && !AmbientPhotoRepository.photos(this).isEmpty())
+            information.start();
     }
 
     @Override
     protected void onPause() {
+        stopUploader(); // No background/photo upload listener after Home or another app.
         if (slideshow != null) slideshow.stop();
         if (information != null) information.stop();
         super.onPause();
@@ -192,19 +224,19 @@ public final class AmbientPhotoActivity extends Activity {
     @Override
     protected void onDestroy() {
         closed = true;
+        stopUploader();
         if (slideshow != null) slideshow.close();
         if (information != null) information.close();
-        importer.shutdownNow();
         super.onDestroy();
     }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_UP
+        if (event.getAction() == KeyEvent.ACTION_UP && uploadDialog == null
                 && emptyPanel.getVisibility() == View.GONE
                 && (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER
                     || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-            openPicker();
+            showUploader();
             return true;
         }
         return super.dispatchKeyEvent(event);
