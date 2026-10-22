@@ -1,0 +1,78 @@
+name: Ambient Android TV 11 Visual Check
+
+on:
+  push:
+    branches: [feature/custom-home-ambient]
+    paths:
+      - .github/workflows/custom-ambient-emulator.yml
+      - tests/ambient-visual/**
+      - launcher/app/src/main/java/com/gathin/tvhome/Ambient**
+      - launcher/app/src/ambientPreview/AndroidManifest.xml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screenshot:
+    name: Android TV 11 photo screensaver screenshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Generate privacy-safe synthetic landscape photo
+        run: |
+          python3 -m pip install --user Pillow
+          mkdir -p artifacts
+          python3 tests/ambient-visual/visual_smoke.py fixture artifacts/ambient-fixture.png
+      - name: Build independent Ambient preview
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PambientPreview=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview
+      - name: Enable KVM acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Capture photo-and-info Ambient preview (Android TV 11 emulator)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-tv
+          arch: x86
+          profile: tv_1080p
+          ram-size: 2048M
+          emulator-boot-timeout: 600
+          disable-animations: false
+          script: |
+            set -euxo pipefail
+            APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+            adb install "$APK"
+            adb shell wm size 1920x1080
+            # Synthetic fixture is an explicitly imported LOCAL test photo.
+            PHOTO_DIR=/sdcard/Android/data/com.k3nnut.tvhome.ambient.preview/files/ambient_photos
+            adb shell mkdir -p "$PHOTO_DIR"
+            adb push artifacts/ambient-fixture.png "$PHOTO_DIR/ambient-synthetic.png"
+            adb shell am start -W -n com.k3nnut.tvhome.ambient.preview/com.gathin.tvhome.AmbientPhotoActivity
+            sleep 15
+            adb exec-out screencap -p > artifacts/ambient-emulator-screenshot.png
+            adb logcat -d -t 250 > artifacts/ambient-emulator-logcat.txt || true
+            python3 tests/ambient-visual/visual_smoke.py check artifacts/ambient-emulator-screenshot.png
+      - name: Attach screenshot and diagnostics (synthetic image only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ambient-android-tv-11-visual-check
+          path: artifacts/
+          retention-days: 14
