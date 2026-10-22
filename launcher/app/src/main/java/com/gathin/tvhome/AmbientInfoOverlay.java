@@ -62,7 +62,7 @@ final class AmbientInfoOverlay extends FrameLayout {
 
         View bottomShade = new View(context);
         bottomShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x00071016, 0x65071016, 0xE5081018}));
+                new int[]{0x00071016, 0x81071016, 0xED081018}));
         LayoutParams shadeBottom = new LayoutParams(-1, size(315, scale), Gravity.BOTTOM);
         addView(bottomShade, shadeBottom);
 
@@ -222,6 +222,13 @@ final class AmbientInfoOverlay extends FrameLayout {
         return -1;
     }
 
+    /** Only highlight tomorrow when its date-specific timetable actually exists. */
+    static boolean nextIsTomorrowSubuh(int[] today, int[] tomorrow, int minutesNow) {
+        return today != null && today.length == 6
+                && tomorrow != null && tomorrow.length == 6
+                && nextPrayer(today, minutesNow) == -1;
+    }
+
     private void updatePrayers() {
         Calendar brunei = Calendar.getInstance(AmbientPrayerSchedule2026.ZONE);
         int[] today = AmbientPrayerSchedule2026.get(brunei);
@@ -233,24 +240,28 @@ final class AmbientInfoOverlay extends FrameLayout {
         prayerRow.setVisibility(View.VISIBLE);
         int minutesNow = brunei.get(Calendar.HOUR_OF_DAY) * 60 + brunei.get(Calendar.MINUTE);
         int next = nextPrayer(today, minutesNow);
-        String nextLabel = null;
-        if (next >= 0) {
-            nextLabel = NAMES[next];
-        } else {
-            Calendar tomorrow = AmbientPrayerSchedule2026.nextDay(brunei);
-            if (AmbientPrayerSchedule2026.get(tomorrow) != null) nextLabel = "Subuh tomorrow";
+        int[] tomorrow = null;
+        if (next < 0) {
+            tomorrow = AmbientPrayerSchedule2026.get(AmbientPrayerSchedule2026.nextDay(brunei));
         }
+        boolean highlightTomorrow = nextIsTomorrowSubuh(today, tomorrow, minutesNow);
+        String nextLabel = next >= 0 ? NAMES[next]
+                : highlightTomorrow ? "Subuh tomorrow" : null;
         prayerStatus.setText(nextLabel == null
                 ? "PDI 2026 · Next prayer unavailable"
                 : "Next: " + nextLabel + " · PDI 2026");
         for (int i = 0; i < 5; i++) {
-            times[i].setText(AmbientPrayerSchedule2026.format(today[PRAYER_INDEXES[i]]));
-            boolean highlight = i == next;
+            boolean tomorrowColumn = highlightTomorrow && i == 0;
+            // Explicitly label the day switch; never highlight today's elapsed Subuh.
+            names[i].setText(tomorrowColumn ? "Subuh · tomorrow" : NAMES[i]);
+            times[i].setText(AmbientPrayerSchedule2026.format(tomorrowColumn
+                    ? tomorrow[0] : today[PRAYER_INDEXES[i]]));
+            boolean highlight = i == next || tomorrowColumn;
             names[i].setTextColor(highlight ? 0xFFFFE7A8 : 0xDAE8ECF3);
             times[i].setTextColor(highlight ? 0xFFFFF2D1 : Color.WHITE);
             if (highlight) {
                 GradientDrawable shade = new GradientDrawable();
-                shade.setColor(0x2CDCC78B);
+                shade.setColor(0x36DCC78B);
                 shade.setCornerRadius(size(18, Math.max(0.68f,
                         getResources().getDisplayMetrics().widthPixels / 1920f)));
                 shade.setStroke(1, 0xA7DFC587);
