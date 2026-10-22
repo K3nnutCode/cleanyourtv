@@ -10,6 +10,14 @@ android {
     // Its MainActivity is disabled, so it cannot take the system HOME role accidentally.
     def ambientPreview = providers.gradleProperty('ambientPreview').map { it.toBoolean() }.getOrElse(false)
 
+    // Default launcher remains network-free. Only explicit Ambient previews get INTERNET.
+    sourceSets {
+        main {
+            manifest.srcFile(ambientPreview ? 'src/ambientPreview/AndroidManifest.xml'
+                    : 'src/main/AndroidManifest.xml')
+        }
+    }
+
     defaultConfig {
         manifestPlaceholders = [
                 mainActivityEnabled: (!ambientPreview).toString(),
