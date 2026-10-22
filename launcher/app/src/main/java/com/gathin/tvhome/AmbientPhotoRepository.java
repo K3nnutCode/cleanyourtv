@@ -77,6 +77,61 @@ final class AmbientPhotoRepository {
         return imported;
     }
 
+
+    /**
+     * Import a single browser-uploaded image. Network handler supplies a strict length,
+     * known MIME type and a bounded InputStream. Filename and EXIF are never served.
+     * Storage and validation are performed on the uploader worker, never on Android's UI.
+     */
+    static void importLocalStream(Context context, InputStream input, long length,
+                                  String mime) throws IOException {
+        String extension = AmbientUploadProtocol.extension(mime);
+        if (extension == null || length < 12
+                || length > AmbientUploadProtocol.MAX_UPLOAD_BYTES) {
+            throw new IOException("Unsupported photo type or size (maximum 10 MB)");
+        }
+        File destination = directory(context);
+        if (photos(context).size() >= MAX_PHOTOS)
+            throw new IOException("100-photo limit reached");
+
+        File partial = File.createTempFile("local-", ".partial", destination);
+        try {
+            byte[] buffer = new byte[32768];
+            byte[] signature = new byte[12];
+            int signatureBytes = 0;
+            long remaining = length;
+            try (FileOutputStream output = new FileOutputStream(partial)) {
+                while (remaining > 0) {
+                    int read = input.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+                    if (read < 0) throw new IOException("Incomplete photo upload");
+                    if (read == 0) continue;
+                    int copy = Math.min(signature.length - signatureBytes, read);
+                    if (copy > 0) {
+                        System.arraycopy(buffer, 0, signature, signatureBytes, copy);
+                        signatureBytes += copy;
+                    }
+                    output.write(buffer, 0, read);
+                    remaining -= read;
+                }
+            }
+            if (!AmbientUploadProtocol.permittedImageSignature(signature, mime))
+                throw new IOException("File content does not match its image type");
+            android.graphics.BitmapFactory.Options bounds =
+                    new android.graphics.BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(partial.getAbsolutePath(), bounds);
+            long pixels = (long) bounds.outWidth * bounds.outHeight;
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0 || pixels > 80_000_000L
+                    || bounds.outWidth > 12000 || bounds.outHeight > 12000) {
+                throw new IOException("Damaged or oversized image dimensions");
+            }
+            File finalPhoto = uniqueFile(destination, extension);
+            if (!partial.renameTo(finalPhoto)) throw new IOException("Could not save photo");
+        } finally {
+            if (partial.exists()) partial.delete();
+        }
+    }
+
     private static File uniqueFile(File destination, String extension) throws IOException {
         for (int i = 0; i < 1000; i++) {
             File file = new File(destination, "photo-" + System.currentTimeMillis()
