@@ -1,28 +1,49 @@
 package com.gathin.tvhome;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 /**
- * Opt-in preview of the ORIGINAL CleanYourTV Home dock and focus engine.
- *
- * It deliberately has no HOME intent filter. The owner's TCL keeps its stock
- * Google TV default Home, and the native Concept B v5 dream stays untouched.
+ * A safe ordinary-app preview of the original CleanYourTV launcher.
+ * Not an Android HOME handler and never starts the photo DreamService.
  */
 public final class HomePreviewActivity extends MainActivity {
+    private static final int DOCK_SLOTS = 4;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null) {
-            Toast.makeText(this, "CleanYourTV Home preview — Back to exit; Home stays Google TV",
+            Toast.makeText(this, "CleanYourTV Home preview — Back exits; Home stays Google TV",
                     Toast.LENGTH_LONG).show();
         }
     }
 
     @Override
     public void onBackPressed() {
-        // The real launcher correctly ignores Back on HOME, but a deliberately
-        // opened PREVIEW needs a reliable way to return to Google TV.
+        // Upstream Home ignores Back because a real HOME app cannot be dismissed.
+        // A manually launched preview should first restore dock focus from the
+        // app grid, and only finish when the user is already at the dock/top bar.
+        RecyclerView grid = findViewById(R.id.grid);
+        if (grid != null) {
+            View focused = grid.findFocus();
+            RecyclerView.ViewHolder focusedHolder =
+                    focused == null ? null : grid.findContainingViewHolder(focused);
+            if (focusedHolder != null
+                    && focusedHolder.getBindingAdapterPosition() >= DOCK_SLOTS) {
+                grid.scrollToPosition(0);
+                grid.post(() -> {
+                    RecyclerView.ViewHolder dock = grid.findViewHolderForAdapterPosition(0);
+                    if (dock instanceof AppAdapter.Holder) {
+                        ((AppAdapter.Holder) dock).card.requestFocus();
+                    }
+                });
+                return;
+            }
+        }
         finish();
     }
 }
