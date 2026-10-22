@@ -1735,9 +1735,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                         null,
                         Shader.TileMode.CLAMP));
             } else {
+                // Preserve upstream's full glow in the actual HOME launcher.
+                // On the opt-in Home preview, use a gentler app-tinted mask:
+                // the background stays near-black rather than washing half
+                // of the TCL display red when YouTube is focused.
+                int[] stops = this instanceof HomePreviewActivity
+                        ? new int[]{0x24FFFFFF, 0x0DFFFFFF, 0x00FFFFFF}
+                        : new int[]{0x5CFFFFFF, 0x26FFFFFF, 0x00FFFFFF};
                 paint.setShader(new RadialGradient(
                         w * 0.32f, h * 0.42f, w * 0.62f,
-                        new int[]{0x5CFFFFFF, 0x26FFFFFF, 0x00FFFFFF},
+                        stops,
                         new float[]{0f, 0.45f, 1f},
                         Shader.TileMode.CLAMP));
             }
