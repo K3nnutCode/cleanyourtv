@@ -50,6 +50,22 @@ public final class AmbientPrayerSchedule2026Test {
         assertEquals(-1, AmbientInfoOverlay.nextPrayer(null, 800));
     }
 
+    @Test public void afterIsyakHighlightsTomorrowOnlyWithVerifiedDate() {
+        int[] october22 = AmbientPrayerSchedule2026.get(2026, 10, 22);
+        int[] october23 = AmbientPrayerSchedule2026.get(2026, 10, 23);
+        assertNotNull(october23);
+        // 23:59: today's Subuh is past; tomorrow's Subuh is the next one.
+        assertEquals(-1, AmbientInfoOverlay.nextPrayer(october22, 23 * 60 + 59));
+        assertTrue(AmbientInfoOverlay.nextIsTomorrowSubuh(
+                october22, october23, 23 * 60 + 59));
+        assertFalse(AmbientInfoOverlay.nextIsTomorrowSubuh(
+                october22, october23, 15 * 60));
+        // Never highlight or invent a 2027 prayer from a 2026 timetable.
+        int[] december31 = AmbientPrayerSchedule2026.get(2026, 12, 31);
+        assertFalse(AmbientInfoOverlay.nextIsTomorrowSubuh(
+                december31, AmbientPrayerSchedule2026.get(2027, 1, 1), 23 * 60 + 59));
+    }
+
     @Test public void bruneiMidnightRoll() {
         Calendar brunei = Calendar.getInstance(AmbientPrayerSchedule2026.ZONE);
         brunei.clear();
