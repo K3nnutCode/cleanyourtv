@@ -9,6 +9,11 @@ android {
     // Independent proof-of-concept: the preview package exposes ONLY an Ambient launcher activity.
     // Its MainActivity is disabled, so it cannot take the system HOME role accidentally.
     def ambientPreview = providers.gradleProperty('ambientPreview').map { it.toBoolean() }.getOrElse(false)
+    // The experimental Home UI runs as an ordinary TV app; never eligible as HOME.
+    def homePreview = providers.gradleProperty('homePreview').map { it.toBoolean() }.getOrElse(false)
+    if (homePreview && ambientPreview) {
+        throw new GradleException("Use only one preview mode (homePreview OR ambientPreview).")
+    }
 
     // Separate manual opt-in DreamService feature; impossible to enable on the
     // default launcher build or on earlier manual-only preview packages.
@@ -18,7 +23,8 @@ android {
     // Default launcher remains network-free. Only explicit Ambient previews get INTERNET.
     sourceSets {
         main {
-            manifest.srcFile(ambientPreview ? 'src/ambientPreview/AndroidManifest.xml'
+            manifest.srcFile(homePreview ? 'src/homePreview/AndroidManifest.xml'
+                    : ambientPreview ? 'src/ambientPreview/AndroidManifest.xml'
                     : 'src/main/AndroidManifest.xml')
         }
     }
