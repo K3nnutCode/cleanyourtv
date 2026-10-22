@@ -118,7 +118,9 @@ public final class AmbientPhotoActivity extends Activity {
         view.setTextColor(color);
         view.setGravity(Gravity.CENTER);
         view.setPadding(dp(12), dp(8), dp(12), dp(8));
-        view.setTextIsSelectable(true); // Remote-friendly: copying is optional, not required.
+        // Selectable TextViews can capture D-pad focus and swallow the TV remote OK key.
+        // The address and PIN are intended to be read from the TV, not selected.
+        view.setTextIsSelectable(false);
         return view;
     }
 
@@ -142,7 +144,7 @@ public final class AmbientPhotoActivity extends Activity {
                     updateEmptyState();
                     if (uploadStatus != null) {
                         uploadStatus.setText(count + " photo(s) on TV. Add more from the browser,"
-                                + " or select Stop uploading to return to your screensaver.");
+                                + " or press OK / Back on your remote to return to the slideshow.");
                     }
                 }
                 @Override public void onStopped(String reason) {
@@ -179,6 +181,8 @@ public final class AmbientPhotoActivity extends Activity {
         uploadStatus = infoLine("Choose JPG, PNG or WebP photos in your browser."
                 + " 10 MB each, up to 100 on this TV.", 19, 0xFFCFDAE6);
         content.addView(uploadStatus);
+        content.addView(infoLine("Press OK or Back on the TV remote when finished.",
+                20, 0xFFFFFFFF));
         content.addView(infoLine("Uploads work only on this local network. The address uses"
                 + " unencrypted HTTP: use trusted home Wi-Fi only. Automatically closes after"
                 + " 10 minutes.", 15, 0xFFB6BEC8));
@@ -186,13 +190,28 @@ public final class AmbientPhotoActivity extends Activity {
         uploadDialog = new AlertDialog.Builder(this)
                 .setTitle("Upload photos over Wi-Fi")
                 .setView(content)
-                .setNegativeButton("Stop uploading", (dialog, which) -> stopUploader())
+                .setNegativeButton("Done / Stop uploading", (dialog, which) -> stopUploader())
                 .create();
+        // Dialogs receive keys before their child view; otherwise D-pad OK may be
+        // swallowed by the dialog's text or stay in the dialog rather than closing it.
+        uploadDialog.setOnKeyListener((dialog, keyCode, event) -> {
+            boolean closeKey = keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+                    || keyCode == KeyEvent.KEYCODE_ENTER
+                    || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+                    || keyCode == KeyEvent.KEYCODE_BACK;
+            if (!closeKey) return false;
+            if (event.getAction() == KeyEvent.ACTION_UP) stopUploader();
+            // Consume both key-down and key-up, so OK cannot reopen the uploader.
+            return true;
+        });
         uploadDialog.setOnDismissListener(dialog -> stopUploader());
         uploadDialog.show();
+        uploadDialog.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus();
     }
 
     private void stopUploader() {
+        // Safe for repeated dismiss callbacks and Activity.onPause.
+        if (uploader == null && uploadDialog == null) return;
         uploadGeneration++;
         if (uploader != null) {
             uploader.close();
