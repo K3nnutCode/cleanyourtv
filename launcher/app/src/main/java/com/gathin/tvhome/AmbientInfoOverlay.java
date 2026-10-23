@@ -56,14 +56,14 @@ final class AmbientInfoOverlay extends FrameLayout {
         // Only the top and bottom of the photo are shaded for typography.
         View topShade = new View(context);
         topShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x98071016, 0x38071016, 0x00071016}));
+                new int[]{0xCE071018, 0x61071016, 0x00071016}));
         LayoutParams shadeTop = new LayoutParams(-1, size(390, scale), Gravity.TOP);
         addView(topShade, shadeTop);
 
         View bottomShade = new View(context);
         bottomShade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x00071016, 0x81071016, 0xED081018}));
-        LayoutParams shadeBottom = new LayoutParams(-1, size(315, scale), Gravity.BOTTOM);
+                new int[]{0x00071016, 0xB2081018, 0xF6081018}));
+        LayoutParams shadeBottom = new LayoutParams(-1, size(370, scale), Gravity.BOTTOM);
         addView(bottomShade, shadeBottom);
 
         LinearLayout header = new LinearLayout(context);
@@ -83,7 +83,8 @@ final class AmbientInfoOverlay extends FrameLayout {
         date.setTimeZone(ZONE);
         date.setFormat12Hour("EEEE, d MMMM yyyy");
         date.setFormat24Hour("EEEE, d MMMM yyyy");
-        date.setTextColor(0xE8EAF0F4);
+        date.setTextColor(0xFFF2F5FA);
+        date.setShadowLayer(3f, 0f, 2f, 0xAA000000);
         date.setTextSize(TypedValue.COMPLEX_UNIT_PX, size(27, scale));
         date.setLetterSpacing(0.03f);
         timeColumn.addView(date);
@@ -93,6 +94,7 @@ final class AmbientInfoOverlay extends FrameLayout {
         clock.setFormat12Hour("h:mm a");
         clock.setFormat24Hour("HH:mm");
         clock.setTextColor(Color.WHITE);
+        clock.setShadowLayer(5f, 0f, 3f, 0xB8000000);
         clock.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
         clock.setTextSize(TypedValue.COMPLEX_UNIT_PX, size(146, scale));
         clock.setIncludeFontPadding(false);
@@ -185,6 +187,7 @@ final class AmbientInfoOverlay extends FrameLayout {
         view.setText(text);
         view.setTextSize(TypedValue.COMPLEX_UNIT_PX, size(px, scale));
         view.setTextColor(color);
+        view.setShadowLayer(2.5f, 0f, 1.5f, 0x9A000000);
         view.setIncludeFontPadding(false);
         view.setSingleLine(true);
         view.setFocusable(false);
@@ -261,10 +264,11 @@ final class AmbientInfoOverlay extends FrameLayout {
             times[i].setTextColor(highlight ? 0xFFFFF2D1 : Color.WHITE);
             if (highlight) {
                 GradientDrawable shade = new GradientDrawable();
-                shade.setColor(0x36DCC78B);
+                shade.setColor(0x60423624);
                 shade.setCornerRadius(size(18, Math.max(0.68f,
                         getResources().getDisplayMetrics().widthPixels / 1920f)));
-                shade.setStroke(1, 0xA7DFC587);
+                shade.setStroke(Math.max(1, size(2, Math.max(0.68f,
+                        getResources().getDisplayMetrics().widthPixels / 1920f))), 0xE8F2DCA7);
                 prayerCells[i].setBackground(shade);
             } else {
                 prayerCells[i].setBackground(null);
