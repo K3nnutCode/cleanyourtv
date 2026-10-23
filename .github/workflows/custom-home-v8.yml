@@ -81,3 +81,4 @@ jobs:
           name: cleanyourtv-home-v8-candidate-apk
           path: launcher/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 21
+# Manual build trigger for v8 candidate
