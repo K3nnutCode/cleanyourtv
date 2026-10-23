@@ -65,7 +65,41 @@ jobs:
           assert "android.intent.category.HOME" in home, "v8 is not a HOME candidate"
           assert "android.intent.category.DEFAULT" in home, "HOME requires DEFAULT"
           assert "android.intent.category.LEANBACK_LAUNCHER" in home, "TV app launcher missing"
-          assert len(re.findall("android.intent.category.HOME", xml)) == 1, "exactly one HOME handler required"
+          # A flat string count is unsafe: package-visibility <queries> can
+          # also refer to HOME without registering a second HOME activity.
+          # Instead inspect compiled AndroidManifest.xml tree relationships:
+          # exactly one HOME category under an activity's intent-filter and
+          # that activity must be the opt-in HomeCandidateActivity.
+          stack, nodes = [], []
+          for line in xml.splitlines():
+              element = re.match(r"^(\s*)E: ([\w-]+)\s*(?:\(|$)", line)
+              if element:
+                  depth = len(element.group(1))
+                  while stack and stack[-1][0] >= depth:
+                      stack.pop()
+                  node = {"tag": element.group(2), "parent": stack[-1][1] if stack else None,
+                          "attrs": []}
+                  nodes.append(node)
+                  stack.append((depth, node))
+              elif re.match(r"^\s*A: ", line) and stack:
+                  stack[-1][1]["attrs"].append(line)
+          def named(node, name):
+              return any("android:name" in a and name in a for a in node["attrs"])
+          handlers = []
+          for node in nodes:
+              if node["tag"] != "category" or not named(node, "android.intent.category.HOME"):
+                  continue
+              parent = node["parent"]
+              # HOME in <queries> is not a registered HOME handler.
+              while parent and parent["tag"] not in ("activity", "activity-alias"):
+                  parent = parent["parent"]
+              if parent is not None:
+                  handlers.append(parent)
+          assert len(handlers) == 1, (
+              "exactly one registered HOME handler required; found " + str(len(handlers)))
+          assert named(handlers[0], "com.gathin.tvhome.HomeCandidateActivity"), (
+              "HOME must be handled only by HomeCandidateActivity")
+          print("PASS: exactly one registered HOME activity (not counting package queries)")
           assert re.search(r"android:enabled.*(?:0xffffffff|0x1|true)", home), "HomeCandidateActivity disabled"
           assert re.search(r"android:enabled.*(?:0x0|false)", section("MainActivity")), "upstream launcher activity not disabled"
           for name in ("AmbientPhotoActivity", "AmbientPhotoDream", "ClockDream", "HomeKeyService", "InputKeyService"):
