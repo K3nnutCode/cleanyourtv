@@ -91,7 +91,7 @@ public final class AmbientPhotoActivity extends Activity {
         screen.addView(emptyPanel, center);
 
         hint = new TextView(this);
-        hint.setText("Preview only  ·  OK: upload photos  ·  Back: exit");
+        hint.setText("OK: Manage photos  ·  Add photos inside gallery  ·  Back: exit");
         hint.setTextColor(0xFFE5E9F0);
         hint.setTextSize(17);
         hint.setPadding(dp(24), dp(15), dp(24), dp(15));
@@ -121,6 +121,9 @@ public final class AmbientPhotoActivity extends Activity {
         if (emptyPanel.getVisibility() == View.VISIBLE) {
             wifi.requestFocus();
         } else {
+            // A full-screen slideshow has no focusable photo tiles. Make
+            // Manage Photos the focused TV remote target immediately.
+            managePhotos.requestFocus();
             hint.postDelayed(() -> {
                 if (!closed && uploader == null) hint.setVisibility(View.GONE);
             }, 8000);
@@ -353,7 +356,11 @@ public final class AmbientPhotoActivity extends Activity {
         uploadDialog = null;
         uploadStatus = null;
         if (dialog != null && dialog.isShowing()) dialog.dismiss();
-        if (!closed && slideshow != null) updateEmptyState();
+        if (!closed && slideshow != null) {
+            updateEmptyState();
+            // Closing the upload modal returns the D-pad to Manage Photos.
+            if (managePhotos != null) managePhotos.requestFocus();
+        }
     }
 
     @Override
@@ -388,12 +395,14 @@ public final class AmbientPhotoActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        // Remote shortcut when the slideshow occupies the screen:
+        // open the photo gallery, never the uploader. Empty collections keep
+        // their original focused Wi-Fi upload button.
         if (event.getAction() == KeyEvent.ACTION_UP && uploadDialog == null
-                && photoDialog == null && getCurrentFocus() != managePhotos
-                && emptyPanel.getVisibility() == View.GONE
+                && photoDialog == null && emptyPanel.getVisibility() == View.GONE
                 && (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER
                     || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-            showUploader();
+            showPhotoManager();
             return true;
         }
         return super.dispatchKeyEvent(event);
