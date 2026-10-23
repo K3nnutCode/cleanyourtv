@@ -2,6 +2,7 @@ package com.gathin.tvhome;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -9,10 +10,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Manually launched Concept B Ambient preview — never an Android HOME activity.
@@ -28,6 +34,8 @@ public final class AmbientPhotoActivity extends Activity {
     private TextView status;
     private TextView hint;
     private AlertDialog uploadDialog;
+    private AlertDialog photoDialog;
+    private Button managePhotos;
     private AmbientLocalUploadServer uploader;
     private TextView uploadStatus;
     private int uploadGeneration;
@@ -94,6 +102,18 @@ public final class AmbientPhotoActivity extends Activity {
         bottom.bottomMargin = dp(44);
         screen.addView(hint, bottom);
 
+        // Always reachable with D-pad: photo management is an intentional action
+        // separate from the automatic, non-interactive DreamService.
+        managePhotos = new Button(this);
+        managePhotos.setText("Manage photos");
+        managePhotos.setTextSize(18);
+        managePhotos.setOnClickListener(v -> showPhotoManager());
+        FrameLayout.LayoutParams managePosition = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.RIGHT);
+        managePosition.setMargins(dp(18), dp(18), dp(24), 0);
+        screen.addView(managePhotos, managePosition);
+
         setContentView(screen);
         screen.setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN |
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
@@ -131,6 +151,118 @@ public final class AmbientPhotoActivity extends Activity {
         if (empty) information.stop();
         else if (hasWindowFocus()) information.start();
         hint.setVisibility(empty || uploader != null ? View.GONE : View.VISIBLE);
+    }
+
+
+    /** TV-remote gallery. Deletions are explicit, confirmed and app-private. */
+    private void showPhotoManager() {
+        if (closed || photoDialog != null || uploadDialog != null) return;
+        List<File> files = AmbientPhotoRepository.photos(this);
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        list.setPadding(dp(20), dp(8), dp(20), dp(8));
+
+        if (files.isEmpty()) {
+            list.addView(infoLine("No saved photos yet. Choose Add photos to start.", 19,
+                    0xFFCDD4DF));
+        }
+        int index = 0;
+        for (File file : files) {
+            final String safeName = file.getName();
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(8), dp(7), dp(8), dp(7));
+
+            ImageView preview = new ImageView(this);
+            preview.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+            int sample = 1;
+            while (options.outWidth / sample > 280 || options.outHeight / sample > 170) {
+                sample *= 2;
+            }
+            options.inJustDecodeBounds = false;
+            options.inSampleSize = sample;
+            preview.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath(), options));
+            LinearLayout.LayoutParams imageSize = new LinearLayout.LayoutParams(
+                    dp(170), dp(96));
+            imageSize.rightMargin = dp(18);
+            row.addView(preview, imageSize);
+
+            TextView name = new TextView(this);
+            name.setText("Photo " + (++index));
+            name.setTextSize(19);
+            name.setTextColor(0xFFFFFFFF);
+            row.addView(name, new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+            Button delete = new Button(this);
+            delete.setText("Delete");
+            delete.setContentDescription("Delete photo " + index);
+            delete.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Delete this photo?")
+                    .setMessage("This removes the photo from the screensaver. It cannot be undone.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Delete photo", (dialog, which) -> {
+                        boolean deleted = AmbientPhotoRepository.deletePhoto(this, safeName);
+                        if (!deleted) Toast.makeText(this, "Could not delete photo",
+                                Toast.LENGTH_SHORT).show();
+                        else {
+                            slideshow.refresh();
+                            updateEmptyState();
+                        }
+                        refreshPhotoManager();
+                    })
+                    .show());
+            row.addView(delete);
+            list.addView(row);
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(list);
+        scroll.setLayoutParams(new ViewGroup.LayoutParams(dp(780), dp(460)));
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle("Screensaver photos (" + files.size() + ")")
+                .setView(scroll)
+                .setNegativeButton("Close", null)
+                .setPositiveButton("Add photos over Wi-Fi", (dialog, which) -> showUploader());
+        if (!files.isEmpty()) {
+            builder.setNeutralButton("Delete all", (dialog, which) -> confirmDeleteAll());
+        }
+        photoDialog = builder.create();
+        AlertDialog current = photoDialog;
+        current.setOnDismissListener(dialog -> {
+            if (photoDialog == current) photoDialog = null;
+        });
+        current.show();
+    }
+
+    private void refreshPhotoManager() {
+        if (photoDialog != null) {
+            AlertDialog previous = photoDialog;
+            photoDialog = null;
+            previous.dismiss();
+        }
+        showPhotoManager();
+    }
+
+    private void confirmDeleteAll() {
+        // The gallery dialog closes when its neutral action is pressed.
+        new AlertDialog.Builder(this)
+                .setTitle("Delete every screensaver photo?")
+                .setMessage("All locally stored screensaver photos will be removed. "
+                        + "This cannot be undone. You can upload new photos afterwards.")
+                .setNegativeButton("Cancel", (dialog, which) -> showPhotoManager())
+                .setPositiveButton("Delete all photos", (dialog, which) -> {
+                    int deleted = AmbientPhotoRepository.deleteAllPhotos(this);
+                    slideshow.refresh();
+                    updateEmptyState();
+                    Toast.makeText(this, deleted + " photos deleted", Toast.LENGTH_SHORT).show();
+                    showPhotoManager();
+                }).show();
     }
 
     private void showUploader() {
@@ -234,6 +366,11 @@ public final class AmbientPhotoActivity extends Activity {
 
     @Override
     protected void onPause() {
+        if (photoDialog != null) {
+            AlertDialog dialog = photoDialog;
+            photoDialog = null;
+            dialog.dismiss();
+        }
         stopUploader(); // No background/photo upload listener after Home or another app.
         if (slideshow != null) slideshow.stop();
         if (information != null) information.stop();
@@ -252,6 +389,7 @@ public final class AmbientPhotoActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_UP && uploadDialog == null
+                && photoDialog == null && getCurrentFocus() != managePhotos
                 && emptyPanel.getVisibility() == View.GONE
                 && (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_CENTER
                     || event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
