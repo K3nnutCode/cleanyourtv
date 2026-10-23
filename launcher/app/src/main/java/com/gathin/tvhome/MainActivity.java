@@ -2854,7 +2854,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     /** Opens the separately installed v6.1 screensaver photo library, never its DreamService. */
     private void openScreensaverPhotos() {
-        open(new Intent().setClassName("com.k3nnut.tvhome.ambient.preview.v61",
+        open(new Intent().setClassName("com.k3nnut.tvhome.ambient.preview.v62",
                 "com.gathin.tvhome.AmbientPhotoActivity"));
     }
 
