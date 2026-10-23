@@ -4,6 +4,16 @@ Instructions for coding agents (Claude Code, Codex, Gemini CLI, Cursor, Copilot 
 this repository. People should start with [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md);
 this file repeats their rules in the form an agent needs, and links to them for the detail.
 
+## HAVEN v9: original TV UI/UX and engineering (fork-only)
+
+For tasks explicitly about the **HAVEN** original Android TV launcher on the `feature/haven-v9-original-ui` branch, first read:
+
+- [HAVEN UX designer skill](.agents/skills/haven-tv-ux/SKILL.md) for layout, design systems, focus-navigation contracts, visual reviews and prototypes.
+- [HAVEN Android TV engineer skill](.agents/skills/haven-android-tv-dev/SKILL.md) for modular Java architecture, lifecycle, remote interactions, builds and safe ADB tests.
+- [HAVEN product vision](docs/v9/PRODUCT_VISION.md) for goals, scope, baseline and acceptance criteria.
+
+These are **fork-specific agent workflow instructions**, not installed global ChatGPT skills or a change to model capability. They **supplement rather than override** the TV safety, backup, privacy and repository rules in this file. Do not touch the currently deployed `v831` HOME or `v631` DreamService while prototyping. The HAVEN v9 preview must be a distinct non-HOME app until specifically authorized.
+
 ## First: which job are you doing?
 
 | You were asked to | Do this |
