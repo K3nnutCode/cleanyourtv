@@ -1,0 +1,79 @@
+name: Concept B v6.3 QR Upload Test APK
+
+on:
+  push:
+    branches: [feature/ambient-v63-qr-upload]
+    paths:
+      - .github/workflows/ambient-v63-qr-upload.yml
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientPhotoActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientPhotoRepository.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientInfoOverlay.java
+      - launcher/app/build.gradle
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientLocalUploadServer.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientUploadProtocol.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AmbientQrPairing.java
+      - launcher/app/src/test/java/com/gathin/tvhome/AmbientQrPairingTest.java
+      - launcher/app/src/ambientPreview/AndroidManifest.xml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-v6:
+    name: Verify separate photo-management APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run tests and compile independent v6.3
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PambientPreview=true \
+            -PambientDreamPreview=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview.v63 \
+            -PlauncherVersionCode=63 \
+            -PlauncherVersionName=6.3.0-rc1
+      - name: Check standalone dream and photo manager
+        run: |
+          set -e
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt"
+          "$AAPT" dump badging "$APK" | grep "package: name='com.k3nnut.tvhome.ambient.preview.v63'"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$RUNNER_TEMP/v63-manifest.txt"
+          python3 - "$RUNNER_TEMP/v63-manifest.txt" <<'PY'
+          import re,sys
+          xml=open(sys.argv[1],encoding="utf8").read()
+          def component(name):
+              parts=xml.split("com.gathin.tvhome."+name,1)
+              if len(parts)<2: raise SystemExit("Missing component: "+name)
+              return parts[1][:1550]
+          assert re.search(r"android:enabled.*(?:0x0|false)",component("MainActivity"))
+          assert re.search(r"android:enabled.*(?:0xffffffff|0x1|true)",component("AmbientPhotoActivity"))
+          dream=component("AmbientPhotoDream")
+          assert re.search(r"android:enabled.*(?:0xffffffff|0x1|true)",dream)
+          assert "android.permission.BIND_DREAM_SERVICE" in dream
+          print("PASS: v6 manager is separate from HOME; private dream is enabled")
+          PY
+      - name: Audit QR pairing test and bundled offline encoder
+        run: |
+          set -e
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          unzip -p "$APK" classes.dex | strings | grep -q 'com/google/zxing/qrcode/QRCodeWriter'
+          test -f launcher/app/src/test/java/com/gathin/tvhome/AmbientQrPairingTest.java
+          echo 'PASS: QR encoder compiled into APK; unit tests exercised in Gradle'
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ambient-v63-qr-upload-test-apk
+          path: launcher/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 21
