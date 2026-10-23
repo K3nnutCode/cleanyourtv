@@ -2,6 +2,19 @@ plugins {
     id 'com.android.application'
 }
 
+// Production releases must use a long-lived owner-managed signing key.
+// No signing secrets are stored in the source tree or in build artifacts.
+def releaseStorePath = System.getenv('TV_RELEASE_KEYSTORE_PATH')
+def releaseStorePassword = System.getenv('TV_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('TV_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('TV_RELEASE_KEY_PASSWORD')
+def hasReleaseSigning = [releaseStorePath, releaseStorePassword,
+                         releaseKeyAlias, releaseKeyPassword].every { it != null && !it.isEmpty() }
+if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+        && !hasReleaseSigning) {
+    throw new GradleException('A production release requires the TV_RELEASE_* signing secrets.')
+}
+
 android {
     namespace 'com.gathin.tvhome'
     compileSdk 34
@@ -29,6 +42,17 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            ownerRelease {
+                storeFile file(releaseStorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     defaultConfig {
         manifestPlaceholders = [
                 mainActivityEnabled: (!ambientPreview).toString(),
@@ -39,8 +63,8 @@ android {
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
         minSdk 26
         targetSdk 34
-        versionCode 7
-        versionName '2.6'
+        versionCode providers.gradleProperty('launcherVersionCode').map { Integer.parseInt(it) }.getOrElse(7)
+        versionName providers.gradleProperty('launcherVersionName').getOrElse('2.6')
     }
 
     buildTypes {
@@ -49,8 +73,8 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            // Sideloaded over ADB, never published: sign with the debug key so it installs over a debug build.
-            signingConfig signingConfigs.debug
+            // No debug-key fallback: real release builds require owner-managed signing.
+            if (hasReleaseSigning) signingConfig signingConfigs.ownerRelease
         }
     }
 
