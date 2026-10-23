@@ -54,7 +54,7 @@
     </queries>
 
     <application
-        android:label="Concept B · Photo Manager v6.1"
+        android:label="Concept B · Photo Manager v6.2"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/banner"
         android:theme="@style/Theme.TvHome"
@@ -161,7 +161,7 @@
             android:name=".AmbientPhotoDream"
             android:enabled="${ambientDreamEnabled}"
             android:exported="true"
-            android:label="Concept B v6.1 · Personal Photos"
+            android:label="Concept B v6.2 · Personal Photos"
             android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />
