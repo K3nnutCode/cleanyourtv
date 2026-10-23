@@ -8,6 +8,7 @@ on:
       - launcher/app/src/main/java/com/gathin/tvhome/AmbientPhotoActivity.java
       - launcher/app/src/main/java/com/gathin/tvhome/AmbientPhotoRepository.java
       - launcher/app/src/main/java/com/gathin/tvhome/AmbientInfoOverlay.java
+      - launcher/app/build.gradle
       - launcher/app/src/main/java/com/gathin/tvhome/AmbientLocalUploadServer.java
       - launcher/app/src/main/java/com/gathin/tvhome/AmbientUploadProtocol.java
       - launcher/app/src/ambientPreview/AndroidManifest.xml
@@ -37,7 +38,9 @@ jobs:
           ./gradlew --no-daemon testDebugUnitTest assembleDebug \
             -PambientPreview=true \
             -PambientDreamPreview=true \
-            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview.v62
+            -PlauncherApplicationId=com.k3nnut.tvhome.ambient.preview.v62 \
+            -PlauncherVersionCode=62 \
+            -PlauncherVersionName=6.2.0-rc1
       - name: Check standalone dream and photo manager
         run: |
           set -e
