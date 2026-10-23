@@ -3,6 +3,8 @@ package com.gathin.tvhome;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -10,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -32,7 +35,6 @@ public final class AmbientPhotoActivity extends Activity {
     private AmbientInfoOverlay information;
     private LinearLayout emptyPanel;
     private TextView status;
-    private TextView hint;
     private AlertDialog uploadDialog;
     private AlertDialog photoDialog;
     private Button managePhotos;
@@ -90,23 +92,21 @@ public final class AmbientPhotoActivity extends Activity {
                 Gravity.CENTER);
         screen.addView(emptyPanel, center);
 
-        hint = new TextView(this);
-        hint.setText("OK: Manage photos  ·  Add photos inside gallery  ·  Back: exit");
-        hint.setTextColor(0xFFE5E9F0);
-        hint.setTextSize(17);
-        hint.setPadding(dp(24), dp(15), dp(24), dp(15));
-        hint.setBackgroundColor(0xAA0E1821);
-        FrameLayout.LayoutParams bottom = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
-        bottom.bottomMargin = dp(44);
-        screen.addView(hint, bottom);
+        // The previous bottom instruction banner obscured the prayer-time panel.
+        // Keep the photograph and prayer information entirely unobstructed.
 
         // Always reachable with D-pad: photo management is an intentional action
         // separate from the automatic, non-interactive DreamService.
         managePhotos = new Button(this);
         managePhotos.setText("Manage photos");
         managePhotos.setTextSize(18);
+        managePhotos.setAllCaps(false);
+        managePhotos.setTextColor(0xFFFFFFFF);
+        managePhotos.setPadding(dp(22), dp(8), dp(22), dp(8));
+        managePhotos.setBackground(focusBackground(0xC914202C, 0xFF243C56, true));
+        managePhotos.setOnFocusChangeListener((view, focused) ->
+                view.setScaleX(focused ? 1.05f : 1f));
+
         managePhotos.setOnClickListener(v -> showPhotoManager());
         FrameLayout.LayoutParams managePosition = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -124,9 +124,6 @@ public final class AmbientPhotoActivity extends Activity {
             // A full-screen slideshow has no focusable photo tiles. Make
             // Manage Photos the focused TV remote target immediately.
             managePhotos.requestFocus();
-            hint.postDelayed(() -> {
-                if (!closed && uploader == null) hint.setVisibility(View.GONE);
-            }, 8000);
         }
     }
 
@@ -153,118 +150,225 @@ public final class AmbientPhotoActivity extends Activity {
         information.setVisibility(empty ? View.GONE : View.VISIBLE);
         if (empty) information.stop();
         else if (hasWindowFocus()) information.start();
-        hint.setVisibility(empty || uploader != null ? View.GONE : View.VISIBLE);
     }
 
 
-    /** TV-remote gallery. Deletions are explicit, confirmed and app-private. */
+    /** Dark, TV-remote-friendly gallery. Only explicit, confirmed deletions. */
     private void showPhotoManager() {
+        showPhotoManager(0);
+    }
+
+    private void showPhotoManager(int focusPosition) {
         if (closed || photoDialog != null || uploadDialog != null) return;
         List<File> files = AmbientPhotoRepository.photos(this);
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(dp(20), dp(8), dp(20), dp(8));
+        int count = files.size();
 
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(22), dp(12), dp(22), dp(20));
+        content.setBackgroundColor(0xFF141B24);
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText(count + (count == 1 ? " photo" : " photos")
+                + "  •  Saved privately on this TV");
+        subtitle.setTextColor(0xFFB9C6D7);
+        subtitle.setTextSize(18);
+        subtitle.setPadding(dp(8), 0, 0, dp(12));
+        content.addView(subtitle);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setVerticalScrollBarEnabled(true);
+        LinearLayout.LayoutParams scrollSize = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1);
+        content.addView(scroll, scrollSize);
+
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(3);
+        grid.setPadding(dp(4), dp(4), dp(4), dp(20));
+        scroll.addView(grid, new ScrollView.LayoutParams(-1, -2));
+
+        Button[] cardButtons = new Button[count];
         if (files.isEmpty()) {
-            list.addView(infoLine("No saved photos yet. Choose Add photos to start.", 19,
-                    0xFFCDD4DF));
+            TextView empty = infoLine("No photos yet. Add photos over Wi-Fi to begin.",
+                    20, 0xFFD3DFEC);
+            GridLayout.LayoutParams emptyParams = new GridLayout.LayoutParams();
+            emptyParams.columnSpec = GridLayout.spec(0, 3);
+            emptyParams.width = dp(750);
+            emptyParams.height = dp(175);
+            grid.addView(empty, emptyParams);
         }
-        int index = 0;
-        for (File file : files) {
-            final String safeName = file.getName();
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(8), dp(7), dp(8), dp(7));
+        for (int index = 0; index < count; index++) {
+            File file = files.get(index);
+            final String savedName = file.getName();
+            final int cardIndex = index;
+            LinearLayout card = new LinearLayout(this);
+            card.setOrientation(LinearLayout.VERTICAL);
+            card.setPadding(dp(10), dp(10), dp(10), dp(10));
+            card.setBackground(roundSurface(0xFF202B37, 14, 0xFF344252, 1));
+            GridLayout.LayoutParams cardParams = new GridLayout.LayoutParams();
+            cardParams.rowSpec = GridLayout.spec(index / 3);
+            cardParams.columnSpec = GridLayout.spec(index % 3);
+            cardParams.width = dp(228);
+            cardParams.height = dp(205);
+            cardParams.setMargins(dp(7), dp(7), dp(7), dp(7));
+            grid.addView(card, cardParams);
 
-            ImageView preview = new ImageView(this);
-            preview.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
-            BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+            ImageView thumbnail = new ImageView(this);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumbnail.setBackground(roundSurface(0xFF303A48, 8, 0, 0));
+            thumbnail.setClipToOutline(true);
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(file.getAbsolutePath(), bounds);
             int sample = 1;
-            while (options.outWidth / sample > 280 || options.outHeight / sample > 170) {
+            while (bounds.outWidth / sample > 360 || bounds.outHeight / sample > 240) {
                 sample *= 2;
             }
-            options.inJustDecodeBounds = false;
-            options.inSampleSize = sample;
-            preview.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath(), options));
-            LinearLayout.LayoutParams imageSize = new LinearLayout.LayoutParams(
-                    dp(170), dp(96));
-            imageSize.rightMargin = dp(18);
-            row.addView(preview, imageSize);
+            bounds.inJustDecodeBounds = false;
+            bounds.inSampleSize = sample;
+            thumbnail.setImageBitmap(BitmapFactory.decodeFile(file.getAbsolutePath(), bounds));
+            card.addView(thumbnail, new LinearLayout.LayoutParams(-1, dp(120)));
 
-            TextView name = new TextView(this);
-            name.setText("Photo " + (++index));
-            name.setTextSize(19);
-            name.setTextColor(0xFFFFFFFF);
-            row.addView(name, new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+            TextView caption = new TextView(this);
+            caption.setText("Photo " + (index + 1));
+            caption.setTextSize(17);
+            caption.setTextColor(0xFFE8EEF5);
+            caption.setPadding(dp(4), dp(6), 0, 0);
+            card.addView(caption);
 
-            Button delete = new Button(this);
-            delete.setText("Delete");
-            delete.setContentDescription("Delete photo " + index);
-            delete.setOnClickListener(v -> new AlertDialog.Builder(this)
-                    .setTitle("Delete this photo?")
-                    .setMessage("This removes the photo from the screensaver. It cannot be undone.")
+            Button remove = actionButton("Delete", true);
+            remove.setContentDescription("Delete photo " + (index + 1));
+            remove.setOnFocusChangeListener((view, focused) -> {
+                card.setBackground(roundSurface(focused ? 0xFF263D50 : 0xFF202B37,
+                        14, focused ? 0xFFB8E9FF : 0xFF344252, focused ? 3 : 1));
+                card.setScaleX(focused ? 1.018f : 1f);
+                card.setScaleY(focused ? 1.018f : 1f);
+            });
+            remove.setOnClickListener(v -> new AlertDialog.Builder(this)
+                    .setTitle("Delete photo " + (cardIndex + 1) + "?")
+                    .setMessage("This removes the photo from your screensaver. "
+                            + "You cannot undo this.")
                     .setNegativeButton("Cancel", null)
-                    .setPositiveButton("Delete photo", (dialog, which) -> {
-                        boolean deleted = AmbientPhotoRepository.deletePhoto(this, safeName);
-                        if (!deleted) Toast.makeText(this, "Could not delete photo",
-                                Toast.LENGTH_SHORT).show();
-                        else {
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        boolean deleted = AmbientPhotoRepository.deletePhoto(this, savedName);
+                        if (!deleted) {
+                            Toast.makeText(this, "Could not delete photo",
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
                             slideshow.refresh();
                             updateEmptyState();
                         }
-                        refreshPhotoManager();
+                        refreshPhotoManager(cardIndex);
                     })
                     .show());
-            row.addView(delete);
-            list.addView(row);
+            LinearLayout.LayoutParams removeSize = new LinearLayout.LayoutParams(-1, dp(43));
+            removeSize.topMargin = dp(3);
+            card.addView(remove, removeSize);
+            cardButtons[index] = remove;
         }
 
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        scroll.addView(list);
-        scroll.setLayoutParams(new ViewGroup.LayoutParams(dp(780), dp(460)));
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle("Screensaver photos (" + files.size() + ")")
-                .setView(scroll)
-                .setNegativeButton("Close", null)
-                .setPositiveButton("Add photos over Wi-Fi", (dialog, which) -> showUploader());
-        if (!files.isEmpty()) {
-            builder.setNeutralButton("Delete all", (dialog, which) -> confirmDeleteAll());
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER_VERTICAL);
+        actions.setPadding(dp(4), dp(16), dp(4), 0);
+        content.addView(actions);
+
+        Button add = actionButton("Add photos over Wi-Fi", false);
+        actions.addView(add, new LinearLayout.LayoutParams(0, dp(57), 1));
+        add.setOnClickListener(v -> {
+            dismissPhotoManager();
+            showUploader();
+        });
+        if (count > 0) {
+            Button clear = actionButton("Delete all", true);
+            LinearLayout.LayoutParams clearParams =
+                    new LinearLayout.LayoutParams(dp(160), dp(57));
+            clearParams.leftMargin = dp(12);
+            actions.addView(clear, clearParams);
+            clear.setOnClickListener(v -> confirmDeleteAll());
         }
-        photoDialog = builder.create();
+        Button close = actionButton("Close", false);
+        LinearLayout.LayoutParams closeParams =
+                new LinearLayout.LayoutParams(dp(140), dp(57));
+        closeParams.leftMargin = dp(12);
+        actions.addView(close, closeParams);
+        close.setOnClickListener(v -> dismissPhotoManager());
+
+        photoDialog = new AlertDialog.Builder(this)
+                .setTitle("Screensaver photo library")
+                .setView(content)
+                .create();
         AlertDialog current = photoDialog;
         current.setOnDismissListener(dialog -> {
             if (photoDialog == current) photoDialog = null;
+            if (!closed) managePhotos.requestFocus();
         });
         current.show();
+        android.view.Window window = current.getWindow();
+        if (window != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            window.setLayout(Math.min(dp(840), Math.round(screenWidth * .94f)),
+                    Math.min(dp(620), Math.round(screenHeight * .88f)));
+        }
+        if (count > 0) cardButtons[Math.min(Math.max(0, focusPosition), count - 1)].requestFocus();
+        else add.requestFocus();
     }
 
-    private void refreshPhotoManager() {
-        if (photoDialog != null) {
-            AlertDialog previous = photoDialog;
-            photoDialog = null;
-            previous.dismiss();
-        }
-        showPhotoManager();
+    private GradientDrawable roundSurface(int fill, int cornerDp, int stroke, int strokeDp) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(fill);
+        shape.setCornerRadius(dp(cornerDp));
+        if (strokeDp > 0) shape.setStroke(dp(strokeDp), stroke);
+        return shape;
+    }
+
+    private StateListDrawable focusBackground(int ordinary, int focused, boolean outline) {
+        StateListDrawable states = new StateListDrawable();
+        states.addState(new int[]{android.R.attr.state_focused},
+                roundSurface(focused, 12, 0xFFB8E9FF, outline ? 3 : 2));
+        states.addState(new int[]{android.R.attr.state_pressed},
+                roundSurface(focused, 12, 0xFFB8E9FF, 2));
+        states.addState(new int[]{}, roundSurface(ordinary, 12, 0xFF415263, 1));
+        return states;
+    }
+
+    private Button actionButton(String title, boolean destructive) {
+        Button button = new Button(this);
+        button.setText(title);
+        button.setAllCaps(false);
+        button.setTextSize(16);
+        button.setTextColor(0xFFFFFFFF);
+        button.setPadding(dp(6), dp(1), dp(6), dp(1));
+        button.setBackground(focusBackground(destructive ? 0xFF503039 : 0xFF304255,
+                destructive ? 0xFF8E4551 : 0xFF376784, true));
+        return button;
+    }
+
+    private void dismissPhotoManager() {
+        AlertDialog dialog = photoDialog;
+        photoDialog = null;
+        if (dialog != null) dialog.dismiss();
+    }
+
+    private void refreshPhotoManager(int focusPosition) {
+        dismissPhotoManager();
+        showPhotoManager(focusPosition);
     }
 
     private void confirmDeleteAll() {
-        // The gallery dialog closes when its neutral action is pressed.
         new AlertDialog.Builder(this)
-                .setTitle("Delete every screensaver photo?")
-                .setMessage("All locally stored screensaver photos will be removed. "
-                        + "This cannot be undone. You can upload new photos afterwards.")
-                .setNegativeButton("Cancel", (dialog, which) -> showPhotoManager())
+                .setTitle("Delete all screensaver photos?")
+                .setMessage("This permanently removes the photos stored in this version "
+                        + "of the screensaver. The action cannot be undone.")
+                .setNegativeButton("Cancel", null)
                 .setPositiveButton("Delete all photos", (dialog, which) -> {
                     int deleted = AmbientPhotoRepository.deleteAllPhotos(this);
                     slideshow.refresh();
                     updateEmptyState();
                     Toast.makeText(this, deleted + " photos deleted", Toast.LENGTH_SHORT).show();
-                    showPhotoManager();
+                    refreshPhotoManager(0);
                 }).show();
     }
 
