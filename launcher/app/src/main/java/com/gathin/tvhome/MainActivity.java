@@ -2844,10 +2844,18 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             addInputRow(rows, popup, R.drawable.ic_settings, getString(R.string.settings), -1,
                     () -> open(systemIntent(Settings.ACTION_SETTINGS)));
         }
+        addInputRow(rows, popup, R.drawable.ic_picture,
+                getString(R.string.manage_screensaver_photos), -1, this::openScreensaverPhotos);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (220 * density), Math.min(panel.getMeasuredWidth(), (int) (360 * density))));
         dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar) ? Gravity.START : Gravity.END);
         rows.getChildAt(0).requestFocus();
+    }
+
+    /** Opens the separately installed v6.1 screensaver photo library, never its DreamService. */
+    private void openScreensaverPhotos() {
+        open(new Intent().setClassName("com.k3nnut.tvhome.ambient.preview.v61",
+                "com.gathin.tvhome.AmbientPhotoActivity"));
     }
 
     /** The header opens launcher settings directly; hold OK keeps the extra home actions available. */
@@ -2858,6 +2866,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
+        addSettingsMenuRow(rows, popup, R.string.manage_screensaver_photos, this::openScreensaverPhotos);
         if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
         if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
