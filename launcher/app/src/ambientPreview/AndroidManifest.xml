@@ -54,7 +54,7 @@
     </queries>
 
     <application
-        android:label="@string/app_name"
+        android:label="Concept B · Photo Manager"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/banner"
         android:theme="@style/Theme.TvHome"
@@ -87,6 +87,7 @@
              This component is an app launcher, NEVER an Android HOME candidate. -->
         <activity
             android:name=".AmbientPhotoActivity"
+            android:label="Manage Screensaver Photos"
             android:enabled="${ambientPreviewEnabled}"
             android:exported="true"
             android:screenOrientation="landscape"
@@ -160,7 +161,7 @@
             android:name=".AmbientPhotoDream"
             android:enabled="${ambientDreamEnabled}"
             android:exported="true"
-            android:label="Concept B · Personal Photos"
+            android:label="Concept B v6 · Personal Photos"
             android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />
