@@ -33,6 +33,13 @@ public class AmbientQrPairingTest {
         } catch (IllegalArgumentException expected) { }
     }
 
+    @Test public void qrFitsInsideTypicalTvDialog() {
+        assertEquals(323, AmbientQrPairing.recommendedQrSizePx(928, 1.5f));
+        assertEquals(215, AmbientQrPairing.recommendedQrSizePx(1080, 1.0f));
+        assertTrue(AmbientQrPairing.recommendedQrSizePx(720, 1.0f) <= 215);
+        assertTrue(AmbientQrPairing.recommendedQrSizePx(540, 1.0f) >= 150);
+    }
+
     @Test public void qrCodeEncodesAReadableSessionLink() throws Exception {
         String payload = AmbientQrPairing.link("http://192.168.1.50:38911/", "ABCD2345");
         BitMatrix qr = new QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, 480, 480);
