@@ -2,6 +2,7 @@ package com.gathin.tvhome;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
@@ -22,6 +23,14 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 
 /**
  * Manually launched Concept B Ambient preview — never an Android HOME activity.
@@ -376,6 +385,30 @@ public final class AmbientPhotoActivity extends Activity {
                 }).show();
     }
 
+    /**
+     * Encode a session URL entirely on-device. The code lives in a URL
+     * fragment (not an HTTP request); the local upload page consumes it once.
+     */
+    private static Bitmap qrBitmap(String link) throws WriterException {
+        int pixels = 480;
+        Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
+        hints.put(EncodeHintType.MARGIN, 2);
+        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+        BitMatrix bits = new QRCodeWriter().encode(
+                link, BarcodeFormat.QR_CODE, pixels, pixels, hints);
+        int width = bits.getWidth();
+        int height = bits.getHeight();
+        int[] rgba = new int[width * height];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                rgba[y * width + x] = bits.get(x, y) ? 0xFF101820 : 0xFFFFFFFF;
+            }
+        }
+        Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        result.setPixels(rgba, 0, width, 0, 0, width, height);
+        return result;
+    }
+
     private void showUploader() {
         if (closed || uploadDialog != null) return;
         final int generation = ++uploadGeneration;
@@ -412,23 +445,48 @@ public final class AmbientPhotoActivity extends Activity {
         content.setGravity(Gravity.CENTER_HORIZONTAL);
         content.setPadding(dp(24), dp(12), dp(24), dp(14));
 
-        content.addView(infoLine("On your PC or phone, open this address:", 20, 0xFFCDD4DF));
-        TextView url = infoLine(uploader.address(), 27, 0xFFFFFFFF);
+        content.addView(infoLine("Scan with your phone camera", 25, 0xFFFFFFFF));
+        content.addView(infoLine("Connect your phone to the same home Wi-Fi as the TV.",
+                17, 0xFFD0DCE9));
+        try {
+            // QR carries the ephemeral upload URL and access code in its fragment.
+            // The fragment is never transmitted in the browser's HTTP GET request.
+            String pairingUrl = uploader.address() + "#code=" + uploader.accessCode();
+            ImageView qr = new ImageView(this);
+            qr.setImageBitmap(qrBitmap(pairingUrl));
+            qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            qr.setBackgroundColor(0xFFFFFFFF);
+            qr.setPadding(dp(12), dp(12), dp(12), dp(12));
+            LinearLayout.LayoutParams qrParams = new LinearLayout.LayoutParams(
+                    dp(285), dp(285));
+            qrParams.gravity = Gravity.CENTER_HORIZONTAL;
+            qrParams.topMargin = dp(8);
+            qrParams.bottomMargin = dp(8);
+            content.addView(qr, qrParams);
+        } catch (WriterException failure) {
+            // The manual URL and code remain visible if QR generation fails.
+            android.util.Log.e("AmbientUpload", "Unable to create upload QR code", failure);
+            content.addView(infoLine("QR unavailable. Use the address and code below.",
+                    18, 0xFFFFE9AE));
+        }
+        content.addView(infoLine("Scan → choose photos → upload. No typing required.",
+                18, 0xFFECF3FA));
+
+        content.addView(infoLine("Manual fallback: address", 15, 0xFFAEBFCC));
+        TextView url = infoLine(uploader.address(), 17, 0xFFE5EEF8);
         url.setTypeface(android.graphics.Typeface.MONOSPACE);
         content.addView(url);
-        content.addView(infoLine("Enter this 8-character code in the browser:", 19, 0xFFCDD4DF));
-        TextView pin = infoLine(uploader.accessCode(), 35, 0xFFFFE9AE);
+        TextView pin = infoLine("Access code: " + uploader.accessCode(), 19, 0xFFFFE9AE);
         pin.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
         content.addView(pin);
 
-        uploadStatus = infoLine("Choose JPG, PNG or WebP photos in your browser."
-                + " 10 MB each, up to 100 on this TV.", 19, 0xFFCFDAE6);
+        uploadStatus = infoLine("JPG, PNG or WebP • 10 MB each • Up to 100 photos",
+                17, 0xFFCFDAE6);
         content.addView(uploadStatus);
         content.addView(infoLine("Press OK or Back on the TV remote when finished.",
-                20, 0xFFFFFFFF));
-        content.addView(infoLine("Uploads work only on this local network. The address uses"
-                + " unencrypted HTTP: use trusted home Wi-Fi only. Automatically closes after"
-                + " 10 minutes.", 15, 0xFFB6BEC8));
+                17, 0xFFFFFFFF));
+        content.addView(infoLine("Trusted home network only • Local HTTP is not encrypted"
+                + " • Session closes after 10 minutes.", 14, 0xFFB6BEC8));
 
         uploadDialog = new AlertDialog.Builder(this)
                 .setTitle("Upload photos over Wi-Fi")
@@ -449,6 +507,13 @@ public final class AmbientPhotoActivity extends Activity {
         });
         uploadDialog.setOnDismissListener(dialog -> stopUploader());
         uploadDialog.show();
+        android.view.Window window = uploadDialog.getWindow();
+        if (window != null) {
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            window.setLayout(Math.min(dp(660), Math.round(screenWidth * .90f)),
+                    Math.min(dp(850), Math.round(screenHeight * .92f)));
+        }
         uploadDialog.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus();
     }
 
