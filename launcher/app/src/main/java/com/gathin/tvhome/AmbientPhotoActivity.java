@@ -301,8 +301,12 @@ public final class AmbientPhotoActivity extends Activity {
                 .create();
         AlertDialog current = photoDialog;
         current.setOnDismissListener(dialog -> {
-            if (photoDialog == current) photoDialog = null;
-            if (!closed) managePhotos.requestFocus();
+            // During a deletion we immediately replace this dialog. The old
+            // dismiss callback must not steal focus from the new photo card.
+            if (photoDialog == current) {
+                photoDialog = null;
+                if (!closed) managePhotos.requestFocus();
+            }
         });
         current.show();
         android.view.Window window = current.getWindow();
