@@ -16,7 +16,7 @@ final class AmbientUploadProtocol {
     private AmbientUploadProtocol() { }
 
     static final class Request {
-        final String method, path, host, origin, contentType, uploadCode, deleteConfirm;
+        final String method, path, host, origin, contentType, uploadCode;
         final long length;
         final boolean chunked;
         Request(String method, String path, Map<String, String> headers, long length) {
@@ -27,7 +27,6 @@ final class AmbientUploadProtocol {
             this.contentType = headers.getOrDefault("content-type", "").split(";", 2)[0]
                     .trim().toLowerCase(Locale.ROOT);
             this.uploadCode = headers.getOrDefault("x-upload-code", "");
-            this.deleteConfirm = headers.getOrDefault("x-delete-confirm", "");
             this.length = length;
             this.chunked = headers.containsKey("transfer-encoding");
         }
@@ -40,10 +39,7 @@ final class AmbientUploadProtocol {
         String[] parts = first.split(" ", -1);
         if (parts.length != 3 || !parts[2].equals("HTTP/1.1")
                 || !(parts[0].equals("GET") || parts[0].equals("POST"))
-                || !(parts[1].equals("/") || parts[1].equals("/upload")
-                    || parts[1].equals("/photos") || parts[1].equals("/delete-all")
-                    || parts[1].startsWith("/thumb/")
-                    || parts[1].startsWith("/delete/"))) {
+                || !(parts[1].equals("/") || parts[1].equals("/upload"))) {
             throw new IOException("Unsupported request line");
         }
         Map<String, String> headers = new HashMap<>();
