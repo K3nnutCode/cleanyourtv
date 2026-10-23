@@ -1,0 +1,122 @@
+# Build trigger: verify isolated v8 candidate on feature branch; no default HOME change.
+name: CleanYourTV Home v8.1 Photo Shortcut Test
+
+on:
+  push:
+    branches:
+      - feature/home-v81-photo-shortcut
+    paths:
+      - .github/workflows/custom-home-v81-photo-shortcut.yml
+      - launcher/app/build.gradle
+      - launcher/app/src/homeCandidate/**
+      - launcher/app/src/homePreview/**
+      - launcher/app/src/main/java/com/gathin/tvhome/HomePreviewActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/HomeCandidateActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/MainActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/AppAdapter.java
+      - launcher/app/src/main/java/com/gathin/tvhome/Config.java
+      - launcher/app/src/main/java/com/gathin/tvhome/DockDecoration.java
+      - launcher/app/src/main/res/values/config.xml
+      - launcher/app/src/main/res/layout/activity_main.xml
+      - launcher/app/src/main/java/com/gathin/tvhome/LauncherSettingsActivity.java
+      - launcher/app/src/main/java/com/gathin/tvhome/QuickSettingsActivity.java
+      - launcher/app/src/main/res/layout/activity_launcher_settings.xml
+      - launcher/app/src/main/res/values/strings.xml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  home-candidate:
+    name: Test, compile and audit HOME candidate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-34 build-tools;34.0.0
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests and isolated v8.1 Android package
+        working-directory: launcher
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug \
+            -PhomeCandidate=true \
+            -PlauncherApplicationId=com.k3nnut.tvhome.home.candidate.v81
+      - name: Audit HOME entry, disabled stock activity, disabled DreamServices and permissions
+        run: |
+          set -euo pipefail
+          APK=launcher/app/build/outputs/apk/debug/app-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/34.0.0/aapt"
+          "$AAPT" dump badging "$APK" > "$RUNNER_TEMP/badging.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > "$RUNNER_TEMP/manifest.txt"
+          python3 - "$RUNNER_TEMP/badging.txt" "$RUNNER_TEMP/manifest.txt" <<'PY'
+          import re, sys
+          badging = open(sys.argv[1], encoding="utf8").read()
+          xml = open(sys.argv[2], encoding="utf8").read()
+          assert "package: name='com.k3nnut.tvhome.home.candidate.v81'" in badging, "wrong APK package"
+          def section(name):
+              parts = xml.split("com.gathin.tvhome." + name, 1)
+              if len(parts) != 2:
+                  raise AssertionError("Missing component " + name)
+              return parts[1][:1900]
+          home = section("HomeCandidateActivity")
+          assert "android.intent.category.HOME" in home, "v8 is not a HOME candidate"
+          assert "android.intent.category.DEFAULT" in home, "HOME requires DEFAULT"
+          assert "android.intent.category.LEANBACK_LAUNCHER" in home, "TV app launcher missing"
+          # A flat string count is unsafe: package-visibility <queries> can
+          # also refer to HOME without registering a second HOME activity.
+          # Instead inspect compiled AndroidManifest.xml tree relationships:
+          # exactly one HOME category under an activity's intent-filter and
+          # that activity must be the opt-in HomeCandidateActivity.
+          stack, nodes = [], []
+          for line in xml.splitlines():
+              element = re.match(r"^(\s*)E: ([\w-]+)\s*(?:\(|$)", line)
+              if element:
+                  depth = len(element.group(1))
+                  while stack and stack[-1][0] >= depth:
+                      stack.pop()
+                  node = {"tag": element.group(2), "parent": stack[-1][1] if stack else None,
+                          "attrs": []}
+                  nodes.append(node)
+                  stack.append((depth, node))
+              elif re.match(r"^\s*A: ", line) and stack:
+                  stack[-1][1]["attrs"].append(line)
+          def named(node, name):
+              return any("android:name" in a and name in a for a in node["attrs"])
+          handlers = []
+          for node in nodes:
+              if node["tag"] != "category" or not named(node, "android.intent.category.HOME"):
+                  continue
+              parent = node["parent"]
+              # HOME in <queries> is not a registered HOME handler.
+              while parent and parent["tag"] not in ("activity", "activity-alias"):
+                  parent = parent["parent"]
+              if parent is not None:
+                  handlers.append(parent)
+          assert len(handlers) == 1, (
+              "exactly one registered HOME handler required; found " + str(len(handlers)))
+          assert named(handlers[0], "com.gathin.tvhome.HomeCandidateActivity"), (
+              "HOME must be handled only by HomeCandidateActivity")
+          print("PASS: exactly one registered HOME activity (not counting package queries)")
+          assert re.search(r"android:enabled.*(?:0xffffffff|0x1|true)", home), "HomeCandidateActivity disabled"
+          assert re.search(r"android:enabled.*(?:0x0|false)", section("MainActivity")), "upstream launcher activity not disabled"
+          for name in ("AmbientPhotoActivity", "AmbientPhotoDream", "ClockDream", "HomeKeyService", "InputKeyService"):
+              assert re.search(r"android:enabled.*(?:0x0|false)", section(name)), "Must be disabled: " + name
+          for name in ("android.permission.INTERNET", "android.permission.WRITE_SECURE_SETTINGS",
+                       "android.permission.ACCESS_FINE_LOCATION"):
+              assert "uses-permission: name='" + name + "'" not in badging, "Forbidden permission " + name
+          print("PASS: isolated v8.1 HOME candidate; no screen-saver hijacking or sensitive permissions")
+          PY
+      - name: Publish candidate APK (debug signed; not release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleanyourtv-home-v81-photo-shortcut-apk
+          path: launcher/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 21
+# Manual build trigger for v8 candidate
