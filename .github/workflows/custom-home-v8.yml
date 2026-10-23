@@ -1,3 +1,4 @@
+# Build trigger: verify isolated v8 candidate on feature branch; no default HOME change.
 name: CleanYourTV Home v8 (opt-in HOME candidate)
 
 on:
