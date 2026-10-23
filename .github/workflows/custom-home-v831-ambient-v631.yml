@@ -1,5 +1,5 @@
 # Build trigger: verify isolated v8 candidate on feature branch; no default HOME change.
-name: CleanYourTV Home v8.3.1.1 QR Fix Shortcut Test
+name: CleanYourTV Home v8.3.1 QR Fix Shortcut Test
 
 on:
   push:
