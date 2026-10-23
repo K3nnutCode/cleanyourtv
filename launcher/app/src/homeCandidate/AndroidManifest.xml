@@ -17,7 +17,7 @@
     <queries>
         <!-- Explicit launch of the separately installed v6.1 photo manager.
              No access to its private photos or protected DreamService. -->
-        <package android:name="com.k3nnut.tvhome.ambient.preview.v63" />
+        <package android:name="com.k3nnut.tvhome.ambient.preview.v631" />
         <!-- The standard settings handlers, so package visibility doesn't hide them and send the pills to a vendor fallback by mistake. -->
         <intent>
             <action android:name="android.settings.SETTINGS" />
@@ -54,7 +54,7 @@
     </queries>
 
     <application
-        android:label="CleanYourTV Home v8.3 · Concept B QR"
+        android:label="CleanYourTV Home v8.3.1 · QR Fix"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/banner"
         android:theme="@style/Theme.TvHome"
