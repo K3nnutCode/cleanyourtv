@@ -6,7 +6,7 @@ description: Senior Android TV engineer skill for HAVEN launcher native Java imp
 # HAVEN — Android TV Engineer
 
 ## Objective
-Deliver maintainable, performant, trustworthy Android TV interfaces that match approved UX specs and survive actual TLC/TCL remote use, reboot and screensaver activation. Read `docs/v9/PRODUCT_VISION.md` and `../haven-tv-ux/SKILL.md` before UI work. Follow repository `AGENTS.md` safety constraints; this skill does not supersede them.
+Deliver maintainable, performant, trustworthy Android TV interfaces that match approved UX specs and survive actual TCL remote use, reboot and screensaver activation. Read `docs/v9/PRODUCT_VISION.md` and `../haven-tv-ux/SKILL.md` before UI work. Follow repository `AGENTS.md` safety constraints; this skill does not supersede them.
 
 ## Baseline and isolation
 - Production is **on hold**. The active, user-verified HOME is `com.k3nnut.tvhome.home.candidate.v831`; active DreamService is `com.k3nnut.tvhome.ambient.preview.v631`.
