@@ -241,8 +241,8 @@ final class AmbientLocalUploadServer implements AutoCloseable {
             </style></head>
             <body><main>
             <h1>Send photos to your TV</h1>
-            <p>Your photos go directly to this TV over your local network. Nothing is uploaded to a cloud.</p>
-            <label for="code">Access code shown on TV</label>
+            <p>Scanned the TV QR? The access code is already filled in. Your photos go directly to this TV, not a cloud.</p>
+            <label for="code">Access code (auto-filled when scanned)</label>
             <input id="code" type="text" placeholder="8-character access code"
               maxlength="8" autocapitalize="characters" autocomplete="off" spellcheck="false">
             <label for="photos">Choose photos (JPG, PNG or WebP, up to 10 MB each)</label>
@@ -257,6 +257,17 @@ final class AmbientLocalUploadServer implements AutoCloseable {
             const photos = document.getElementById('photos');
             const status = document.getElementById('status');
             const button = document.getElementById('send');
+            // The camera's QR payload is /#code=XXXXXXXX. URL fragments never
+            // reach the HTTP server; remove it from browser history immediately.
+            const scanned = new URLSearchParams(location.hash.slice(1)).get('code');
+            if (scanned && /^[A-Z2-9]{8}$/.test(scanned.toUpperCase())) {
+              code.value = scanned.toUpperCase();
+              status.textContent = 'QR connected. Choose photos and tap Send photos.';
+            }
+            if (location.hash) {
+              try { history.replaceState(null, '', location.pathname); }
+              catch (ignored) { /* Some embedded QR browsers disable history. */ }
+            }
             button.addEventListener('click', async () => {
               const password = code.value.trim().toUpperCase();
               const selected = [...photos.files];
