@@ -134,7 +134,7 @@ public final class LauncherSettingsActivity extends Activity {
             refresh();
         });
         findViewById(R.id.manageScreensaverChoice).setOnClickListener(v ->
-                open(new Intent().setClassName("com.k3nnut.tvhome.ambient.preview.v61",
+                open(new Intent().setClassName("com.k3nnut.tvhome.ambient.preview.v62",
                         "com.gathin.tvhome.AmbientPhotoActivity")));
         findViewById(R.id.defaultHomeChoice).setOnClickListener(v -> {
             Toast.makeText(this, R.string.home_settings_help, Toast.LENGTH_LONG).show();
