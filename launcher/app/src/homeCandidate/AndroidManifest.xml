@@ -54,7 +54,7 @@
     </queries>
 
     <application
-        android:label="CleanYourTV Home v8 · Candidate"
+        android:label="CleanYourTV Home v8.1 · Photo Shortcuts"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/banner"
         android:theme="@style/Theme.TvHome"
