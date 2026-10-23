@@ -50,16 +50,6 @@ final class AmbientPhotoRepository {
         return false;
     }
 
-    /** Resolve only files belonging to the saved collection, never an arbitrary path. */
-    static synchronized File findPhoto(Context context, String name) {
-        if (name == null || !name.matches("photo-[0-9]+-[0-9]+\\.(jpg|png|webp)"))
-            return null;
-        for (File image : photos(context)) {
-            if (image.getName().equals(name)) return image;
-        }
-        return null;
-    }
-
     /** Explicit user-confirmed bulk delete. Never removes the directory or preferences. */
     static synchronized int deleteAllPhotos(Context context) {
         int deleted = 0;
