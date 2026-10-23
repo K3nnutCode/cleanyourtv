@@ -37,6 +37,28 @@ final class AmbientPhotoRepository {
         return WallpaperRotation.images(directory(context));
     }
 
+    /**
+     * Delete only a photo that is currently in this app's private collection.
+     * Do not accept arbitrary paths, URIs or names from a caller.
+     */
+    static synchronized boolean deletePhoto(Context context, String name) {
+        if (name == null || name.isEmpty() || name.contains("/") || name.contains("\\"))
+            return false;
+        for (File image : photos(context)) {
+            if (image.getName().equals(name)) return image.delete();
+        }
+        return false;
+    }
+
+    /** Explicit user-confirmed bulk delete. Never removes the directory or preferences. */
+    static synchronized int deleteAllPhotos(Context context) {
+        int deleted = 0;
+        for (File image : photos(context)) {
+            if (image.delete()) deleted++;
+        }
+        return deleted;
+    }
+
     /** Copies approved picker URIs into this app's own directory. Called from a background executor. */
     static int importSelected(Context context, List<Uri> uris) {
         File destination = directory(context);
