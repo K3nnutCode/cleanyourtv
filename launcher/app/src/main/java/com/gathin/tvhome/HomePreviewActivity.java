@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
  * its render clip is adjusted while parked on the dock to keep the first
  * screen uncluttered. Press Down to expose the unchanged installed-app grid.
  */
-public final class HomePreviewActivity extends MainActivity {
+public class HomePreviewActivity extends MainActivity {
     private static final int DOCK_SLOTS = 4;
     private RecyclerView previewGrid;
     private boolean dockOnly = true;
@@ -37,7 +37,7 @@ public final class HomePreviewActivity extends MainActivity {
             });
             scheduleDockClip();
         }
-        if (savedInstanceState == null) {
+        if (isStandalonePreview() && savedInstanceState == null) {
             Toast.makeText(this, "CleanYourTV Home preview — Back exits; Home stays Google TV",
                     Toast.LENGTH_LONG).show();
         }
@@ -86,6 +86,9 @@ public final class HomePreviewActivity extends MainActivity {
         }
     }
 
+    /** True for the independent v7 preview; false for the HOME-capable subclass. */
+    protected boolean isStandalonePreview() { return true; }
+
     @Override
     public void onBackPressed() {
         // The actual HOME launcher ignores Back. This stand-alone preview
@@ -108,6 +111,8 @@ public final class HomePreviewActivity extends MainActivity {
                 return;
             }
         }
-        finish();
+        // Android HOME must remain active when Back is pressed on the dock.
+        // The v7 preview continues to exit to Google TV as before.
+        if (isStandalonePreview()) finish();
     }
 }
