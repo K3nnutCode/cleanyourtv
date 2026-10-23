@@ -451,7 +451,7 @@ public final class AmbientPhotoActivity extends Activity {
         try {
             // QR carries the ephemeral upload URL and access code in its fragment.
             // The fragment is never transmitted in the browser's HTTP GET request.
-            String pairingUrl = uploader.address() + "#code=" + uploader.accessCode();
+            String pairingUrl = AmbientQrPairing.link(uploader.address(), uploader.accessCode());
             ImageView qr = new ImageView(this);
             qr.setImageBitmap(qrBitmap(pairingUrl));
             qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
