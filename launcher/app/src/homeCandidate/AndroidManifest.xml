@@ -15,6 +15,9 @@
     <!-- Android 11+ package visibility: lets the launcher list the TV apps it shows as tiles, and the
          apps that declare a module card (docs/specs/card.md). -->
     <queries>
+        <!-- Explicit launch of the separately installed v6.1 photo manager.
+             No access to its private photos or protected DreamService. -->
+        <package android:name="com.k3nnut.tvhome.ambient.preview.v61" />
         <!-- The standard settings handlers, so package visibility doesn't hide them and send the pills to a vendor fallback by mistake. -->
         <intent>
             <action android:name="android.settings.SETTINGS" />
