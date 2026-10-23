@@ -392,7 +392,7 @@ public final class AmbientPhotoActivity extends Activity {
     private static Bitmap qrBitmap(String link) throws WriterException {
         int pixels = 480;
         Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-        hints.put(EncodeHintType.MARGIN, 2);
+        hints.put(EncodeHintType.MARGIN, 4);
         hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
         BitMatrix bits = new QRCodeWriter().encode(
                 link, BarcodeFormat.QR_CODE, pixels, pixels, hints);
@@ -443,22 +443,32 @@ public final class AmbientPhotoActivity extends Activity {
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setGravity(Gravity.CENTER_HORIZONTAL);
-        content.setPadding(dp(24), dp(12), dp(24), dp(14));
+        // Keep the QR and its quiet border together inside a scrollable dialog.
+        // Large TV display scaling previously cut off the lower third of the QR.
+        content.setPadding(dp(16), dp(8), dp(16), dp(12));
 
-        content.addView(infoLine("Scan with your phone camera", 25, 0xFFFFFFFF));
-        content.addView(infoLine("Connect your phone to the same home Wi-Fi as the TV.",
-                17, 0xFFD0DCE9));
+        TextView scanTitle = infoLine("Scan with your phone camera", 23, 0xFFFFFFFF);
+        scanTitle.setPadding(dp(6), dp(4), dp(6), dp(4));
+        content.addView(scanTitle);
+        TextView scanHint = infoLine("Phone and TV must be on the same home Wi-Fi.",
+                16, 0xFFD0DCE9);
+        scanHint.setPadding(dp(6), dp(3), dp(6), dp(6));
+        content.addView(scanHint);
         try {
             // QR carries the ephemeral upload URL and access code in its fragment.
             // The fragment is never transmitted in the browser's HTTP GET request.
             String pairingUrl = AmbientQrPairing.link(uploader.address(), uploader.accessCode());
             ImageView qr = new ImageView(this);
             qr.setImageBitmap(qrBitmap(pairingUrl));
-            qr.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            qr.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            qr.setAdjustViewBounds(true);
             qr.setBackgroundColor(0xFFFFFFFF);
-            qr.setPadding(dp(12), dp(12), dp(12), dp(12));
+            qr.setPadding(dp(14), dp(14), dp(14), dp(14));
+            int qrSize = AmbientQrPairing.recommendedQrSizePx(
+                    getResources().getDisplayMetrics().heightPixels,
+                    getResources().getDisplayMetrics().density);
             LinearLayout.LayoutParams qrParams = new LinearLayout.LayoutParams(
-                    dp(285), dp(285));
+                    qrSize, qrSize);
             qrParams.gravity = Gravity.CENTER_HORIZONTAL;
             qrParams.topMargin = dp(8);
             qrParams.bottomMargin = dp(8);
@@ -469,10 +479,14 @@ public final class AmbientPhotoActivity extends Activity {
             content.addView(infoLine("QR unavailable. Use the address and code below.",
                     18, 0xFFFFE9AE));
         }
-        content.addView(infoLine("Scan → choose photos → upload. No typing required.",
-                18, 0xFFECF3FA));
+        TextView steps = infoLine("Scan  •  Choose photos  •  Upload", 16, 0xFFECF3FA);
+        steps.setPadding(dp(4), dp(2), dp(4), dp(8));
+        content.addView(steps);
 
-        content.addView(infoLine("Manual fallback: address", 15, 0xFFAEBFCC));
+        TextView manual = infoLine("Manual fallback: address and access code",
+                14, 0xFFAEBFCC);
+        manual.setPadding(dp(4), dp(3), dp(4), dp(2));
+        content.addView(manual);
         TextView url = infoLine(uploader.address(), 17, 0xFFE5EEF8);
         url.setTypeface(android.graphics.Typeface.MONOSPACE);
         content.addView(url);
@@ -488,9 +502,17 @@ public final class AmbientPhotoActivity extends Activity {
         content.addView(infoLine("Trusted home network only • Local HTTP is not encrypted"
                 + " • Session closes after 10 minutes.", 14, 0xFFB6BEC8));
 
+        // Extra status and manual fallback text may scroll on TVs with
+        // large accessibility font scaling. The QR stays fully measurable.
+        ScrollView scrolling = new ScrollView(this);
+        scrolling.setFillViewport(false);
+        scrolling.setVerticalScrollBarEnabled(true);
+        scrolling.addView(content, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         uploadDialog = new AlertDialog.Builder(this)
                 .setTitle("Upload photos over Wi-Fi")
-                .setView(content)
+                .setView(scrolling)
                 .setNegativeButton("Done / Stop uploading", (dialog, which) -> stopUploader())
                 .create();
         // Dialogs receive keys before their child view; otherwise D-pad OK may be
@@ -514,6 +536,7 @@ public final class AmbientPhotoActivity extends Activity {
             window.setLayout(Math.min(dp(660), Math.round(screenWidth * .90f)),
                     Math.min(dp(850), Math.round(screenHeight * .92f)));
         }
+        scrolling.post(() -> scrolling.scrollTo(0, 0));
         uploadDialog.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus();
     }
 
